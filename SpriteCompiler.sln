@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpriteCompiler", "SpriteCompiler/SpriteCompiler.csproj", "{56F54CA9-17C1-45C6-915B-6FABF4DAE5D0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpriteCompiler", "SpriteCompiler\SpriteCompiler.csproj", "{56F54CA9-17C1-45C6-915B-6FABF4DAE5D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpriteCompiler.Test", "SpriteCompiler.Test\SpriteCompiler.Test.csproj", "{7B87BB8E-8C6E-4CE7-9130-6DA8F9454D8C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{56F54CA9-17C1-45C6-915B-6FABF4DAE5D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56F54CA9-17C1-45C6-915B-6FABF4DAE5D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56F54CA9-17C1-45C6-915B-6FABF4DAE5D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B87BB8E-8C6E-4CE7-9130-6DA8F9454D8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B87BB8E-8C6E-4CE7-9130-6DA8F9454D8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B87BB8E-8C6E-4CE7-9130-6DA8F9454D8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B87BB8E-8C6E-4CE7-9130-6DA8F9454D8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
