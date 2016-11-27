@@ -9,13 +9,17 @@
     /// <typeparam name="S">State of the search</typeparam>
     /// <typeparam name="T">Type of the parent</typeparam>
     /// <typeparam name="C">Cost type</typeparam>
-    public interface ISearchNode<A, S, T, C> where C : IComparable<C>
+    public interface ISearchNode<A, S, T, C> : ISearchNode<C> where C : IPathCost<C>
     {
         A Action { get; set; }
         C StepCost { get; set; }
-        C PathCost { get; }
         int Depth { get; }
         S State { get; }
         T Parent { get; }
+    }
+
+    public interface ISearchNode<C>
+    {
+        C PathCost { get; }
     }
 }

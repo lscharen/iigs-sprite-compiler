@@ -5,7 +5,7 @@
         where C : IPathCost<C>
     {
         public AStarSearch(AbstractAISearch<A, S, T, C> search)
-            : base(search, new AStarComparator<A, S, T, C>())
+            : base(search) // , new AStarComparator<A, S, T, C>())
         {
         }
 

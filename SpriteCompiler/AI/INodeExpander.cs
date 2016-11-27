@@ -11,7 +11,7 @@
     /// </summary>
     public interface INodeExpander<A, S, T, C>
         where T : ISearchNode<A, S, T, C>
-        where C : IComparable<C>
+        where C : IPathCost<C>
     {
         IEnumerable<T> Expand(ISearchProblem<A, S, C> problem, T node);
         T CreateNode(T parent, S state);

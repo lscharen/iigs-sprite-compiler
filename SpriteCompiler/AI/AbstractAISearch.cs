@@ -6,7 +6,7 @@
 
     public abstract class AbstractAISearch<A, S, T, C>
         where T : ISearchNode<A, S, T, C>
-        where C : IComparable<C>
+        where C : IPathCost<C>
     {
         // Conceptually the expander is responsible for two things:
         //
@@ -68,7 +68,7 @@
             return !solution.Any();
         }
 
-        public IEnumerable<T> Search(ISearchProblem<A, S, C> problem, IQueue<T> fringe, S initialState)
+        public virtual IEnumerable<T> Search(ISearchProblem<A, S, C> problem, IQueue<T> fringe, S initialState)
         {
             fringe.Enqueue(expander.CreateNode(default(T), initialState));
             return ExtendSearch(problem, fringe);

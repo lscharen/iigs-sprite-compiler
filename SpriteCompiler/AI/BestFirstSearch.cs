@@ -1,5 +1,6 @@
 ﻿namespace SpriteCompiler.AI
 {
+    using Adapters;
     using System.Collections.Generic;
 
     public class BestFirstSearch<A, S, T, C> : ISearch<A, S, T, C>
@@ -15,10 +16,10 @@
             this.fringe = fringe;
         }
 
-        public BestFirstSearch(AbstractAISearch<A, S, T, C> search, IComparer<T> comparator)
+        public BestFirstSearch(AbstractAISearch<A, S, T, C> search)
         {
             this.search = search;
-            // this.fringe = new PriorityQueue<T>(INITIAL_CAPACITY, comparator);
+            this.fringe = new QueueAdapter<T, C>();
         }
 
         public IEnumerable<T> Search(ISearchProblem<A, S, C> problem, S initialState)
