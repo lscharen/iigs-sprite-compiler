@@ -47,18 +47,29 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Adapters\QueueAdapter.cs" />
     <Compile Include="AI\AbstractAISearch.cs" />
     <Compile Include="AI\AbstractSearchNode.cs" />
     <Compile Include="AI\AStarComparer.cs" />
     <Compile Include="AI\AStarSearch.cs" />
     <Compile Include="AI\BestFirstSearch.cs" />
     <Compile Include="AI\HeuristicSearchNode.cs" />
+    <Compile Include="AI\IHeuristicFunction.cs" />
+    <Compile Include="AI\InformedNodeExpander.cs" />
+    <Compile Include="AI\ISuccessorFunction.cs" />
+    <Compile Include="AI\IGoalTest.cs" />
     <Compile Include="AI\INodeExpander.cs" />
     <Compile Include="AI\IPathCost.cs" />
     <Compile Include="AI\IQueue.cs" />
     <Compile Include="AI\ISearch.cs" />
     <Compile Include="AI\ISearchNode.cs" />
     <Compile Include="AI\ISearchProblem.cs" />
+    <Compile Include="AI\IStepCostFunction.cs" />
+    <Compile Include="AI\SearchProblem.cs" />
+    <Compile Include="AI\GraphSearch.cs" />
+    <Compile Include="AI\TreeSearch.cs" />
+    <Compile Include="Problem\CodeSequence.cs" />
+    <Compile Include="Problem\SpriteGeneratorSearchProblem.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
