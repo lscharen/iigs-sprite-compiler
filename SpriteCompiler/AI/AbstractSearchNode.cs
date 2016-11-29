@@ -5,14 +5,14 @@
 
     public abstract class AbstractSearchNode<A, S, T, C> : ISearchNode<A, S, T, C>
         where T : ISearchNode<A, S, T, C>
-        where C : IPathCost<C>
+        where C : IPathCost<C>, new()
     {
         protected readonly S state;
         protected readonly T parent;
         protected A action = default(A);
 
-        protected C pathCost = default(C);
-        protected C stepCost = default(C);
+        protected C pathCost = new C();
+        protected C stepCost = new C();
         protected readonly int depth;
 
         public AbstractSearchNode(T node, S state)

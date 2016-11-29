@@ -5,7 +5,7 @@ namespace SpriteCompiler.AI
 {
     public abstract class InformedNodeExpander<A, S, T, C> : INodeExpander<A, S, T, C>
         where T : HeuristicSearchNode<A, S, T, C>
-        where C : IPathCost<C>
+        where C : IPathCost<C>, new()
     {
         public abstract T CreateNode(T parent, S state);
 

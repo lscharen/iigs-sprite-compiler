@@ -4,7 +4,7 @@
 
     public class HeuristicSearchNode<A, S, T, C> : AbstractSearchNode<A, S, T, C>, ISearchNode<A, S, T, C>
         where T : HeuristicSearchNode<A, S, T, C>
-        where C : IPathCost<C>
+        where C : IPathCost<C>, new()
     {
         public HeuristicSearchNode(T node, S state)
             : base(node, state)

@@ -2,7 +2,7 @@
 {
     public class AStarSearch<A, S, T, C> : BestFirstSearch<A, S, T, C>
         where T : HeuristicSearchNode<A, S, T, C>
-        where C : IPathCost<C>
+        where C : IPathCost<C>, new()
     {
         public AStarSearch(AbstractAISearch<A, S, T, C> search)
             : base(search) // , new AStarComparator<A, S, T, C>())

@@ -69,6 +69,7 @@
     <Compile Include="AI\GraphSearch.cs" />
     <Compile Include="AI\TreeSearch.cs" />
     <Compile Include="Problem\CodeSequence.cs" />
+    <Compile Include="Problem\SpriteByte.cs" />
     <Compile Include="Problem\SpriteGeneratorSearchProblem.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

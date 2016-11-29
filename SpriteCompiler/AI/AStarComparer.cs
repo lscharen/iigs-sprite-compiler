@@ -8,7 +8,7 @@ namespace SpriteCompiler.AI
 {
     public class AStarComparator<A, S, T, C> : IComparer<T>
         where T : HeuristicSearchNode<A, S, T, C>
-        where C : IPathCost<C>
+        where C : IPathCost<C>, new()
     {
         public int Compare(T x, T y)
         {
