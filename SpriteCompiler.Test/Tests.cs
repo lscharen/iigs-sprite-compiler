@@ -47,10 +47,10 @@ namespace SpriteCompiler.Test
             // LONG A     = 14 cycles
 
             Assert.AreEqual(5, solution.Count());
-            Assert.AreEqual(14, solution.First().PathCost);
+            Assert.AreEqual(14, (int)solution.Last().PathCost);
 
             // Write out the solution
-            foreach (var step in solution)
+            foreach (var step in solution.Skip(1))
             {
                 Trace.WriteLine(step.Action.ToString());
             }

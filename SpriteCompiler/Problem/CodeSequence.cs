@@ -25,7 +25,7 @@ namespace SpriteCompiler.Problem
         // Helper function for ToString implementations
         protected string FormatLine(string label, string opcode, string operand, string comment)
         {
-            return String.Format("{0}\t{1}\t{2}\t; {3}");
+            return String.Format("{0}\t{1}\t{2}\t; {3}", label, opcode, operand, comment);
         }
     }
 
