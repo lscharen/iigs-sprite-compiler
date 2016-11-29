@@ -70,7 +70,7 @@ namespace SpriteCompiler.Problem
 
         public override SpriteGeneratorState Apply(SpriteGeneratorState state)
         {
-            return state.Clone(_ => _.P |= 0x10);
+            return state.Clone(_ => _.P &= 0xEF);
         }
 
         public override string ToString()
@@ -85,7 +85,7 @@ namespace SpriteCompiler.Problem
 
         public override SpriteGeneratorState Apply(SpriteGeneratorState state)
         {
-            return state.Clone(_ => _.P &= 0xEF);
+            return state.Clone(_ => _.P |= 0x10);
         }
 
         public override string ToString()

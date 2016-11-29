@@ -40,6 +40,11 @@ namespace SpriteCompiler.Problem
         {
             return value.CompareTo(other.value);
         }
+
+        public override string ToString()
+        {
+            return value.ToString();
+        }
     }
 
     public class SpriteGeneratorState
@@ -141,7 +146,7 @@ namespace SpriteCompiler.Problem
         {
             if (IsUninitialized)
             {
-                throw new ArgumentException("Cannot add valued to uninitialized registers");
+                throw new ArgumentException("Cannot add value to uninitialized registers");
             }
 
             // Adding a value does not change the tag
@@ -178,8 +183,9 @@ namespace SpriteCompiler.Problem
     {
         public bool IsGoal(SpriteGeneratorState state)
         {
-            // We have reached our goal when there is no data left to display
-            return state.IsEmpty;
+            // We have reached our goal when there is no data left to display and we are back in 
+            // 16-bit mode
+            return state.IsEmpty && state.LongA && state.LongI;
         }
     }
 
@@ -189,8 +195,7 @@ namespace SpriteCompiler.Problem
         {
             var actions = new List<CodeSequence>();
 
-            // If the accumulator holds an offset then we could move to any byte position.  We do
-            // not allow two consecutive MOVE_STACK operations
+            // If the accumulator holds an offset then we could move to any byte position.
             if (state.A.IsScreenOffset && !state.S.IsScreenOffset)
             {
                 foreach (var datum in state.Bytes)
@@ -200,7 +205,7 @@ namespace SpriteCompiler.Problem
             }
 
             // If the accumulator and stack are both initialized, only propose moves to locations
-            // before and after the current 256 byte window
+            // before and after the current 256 byte stack-relative window
             if (state.A.IsScreenOffset && state.S.IsScreenOffset)
             {
                 var addr = state.S.Value;
@@ -230,7 +235,7 @@ namespace SpriteCompiler.Problem
                     foreach (var datum in state.Bytes.Where(x => (x.Offset - addr) < 255))
                     {
                         var offset = datum.Offset - addr;
-                        actions.Add(new STACK_REL_8_BIT_IMMEDIATE_STORE((byte)offset, datum.Data));
+                        actions.Add(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, (byte)offset));
                     }
                 }
             }

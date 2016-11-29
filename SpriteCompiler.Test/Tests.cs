@@ -27,6 +27,8 @@ namespace SpriteCompiler.Test
         [TestMethod]
         public void TestSingleByteSprite()
         {
+            Trace.WriteLine("Testing a sprite with just one byte");
+
             // Arrange
             var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
             var search = SpriteGeneratorSearchProblem.Create();
