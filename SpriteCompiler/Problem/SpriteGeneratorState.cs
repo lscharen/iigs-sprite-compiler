@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
 
-    public class SpriteGeneratorState
+    public class SpriteGeneratorState : IEquatable<SpriteGeneratorState>
     {
         public SpriteGeneratorState()
             : this(new SpriteByte[0])
@@ -86,5 +86,39 @@
         public Register S { get; set; }  // S is always an offset, not a literal number
 
         public byte P { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as SpriteGeneratorState);
+        }
+
+        public bool Equals(SpriteGeneratorState other)
+        {
+            // Two states are equal if the bytes are the same and all registers are the same
+            return Bytes.SequenceEqual(other.Bytes) &&
+                A.Equals(other.A) &&
+                X.Equals(other.X) &&
+                Y.Equals(other.Y) &&
+                D.Equals(other.D) &&
+                S.Equals(other.S) &&
+                P.Equals(other.P)
+                ;
+        }
+
+        public static bool operator ==(SpriteGeneratorState state1, SpriteGeneratorState state2)
+        {
+            if (((object)state1) == null || ((object)state2) == null)
+                return Object.Equals(state1, state2);
+
+            return state1.Equals(state2);
+        }
+
+        public static bool operator !=(SpriteGeneratorState state1, SpriteGeneratorState state2)
+        {
+            if (((object)state1) == null || ((object)state2) == null)
+                return !Object.Equals(state1, state2);
+
+            return !(state1.Equals(state2));
+        }
     }
 }
