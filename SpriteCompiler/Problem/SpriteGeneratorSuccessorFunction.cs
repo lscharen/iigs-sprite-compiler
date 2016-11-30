@@ -7,7 +7,7 @@
 
     public sealed class SpriteGeneratorSuccessorFunction : ISuccessorFunction<CodeSequence, SpriteGeneratorState>
     {
-        public IDictionary<CodeSequence, SpriteGeneratorState> Successors(SpriteGeneratorState state)
+        public IEnumerable<Tuple<CodeSequence, SpriteGeneratorState>> Successors(SpriteGeneratorState state)
         {
             // This is the work-horse of the compiler.  For a given state we need to enumerate all of the
             // potential next operations.
@@ -26,7 +26,8 @@
             // 3. Single-byte at the end of a solid run
             //    a. If no registers are 8-bit, LDA #Imm/STA 0,s (8 cycles, sets Acc)
             //    b. If any reg is already 8-bit, LDA #imm/PHA (6 cycles)
-
+            //
+            // We al
             var actions = new List<CodeSequence>();
             var bytes = state.Bytes.ToDictionary(x => x.Offset, x => x);
 
@@ -117,7 +118,7 @@
             }
 
             // Run through the actions to create a dictionary
-            return actions.ToDictionary(x => x, x => x.Apply(state));
+            return actions.Select(x => Tuple.Create(x, x.Apply(state)));
         }
 
         private Func<SpriteByte, bool> WithinRangeOf(int addr, int range)

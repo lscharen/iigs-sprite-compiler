@@ -13,8 +13,8 @@ namespace SpriteCompiler.AI
         {
             foreach (var successor in problem.Successors(node.State))
             {
-                var action = successor.Key;
-                var state = successor.Value;
+                var action = successor.Item1;
+                var state = successor.Item2;
                 var next = CreateNode(node, state);
 
                 next.Action = action;

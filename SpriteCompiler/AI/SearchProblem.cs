@@ -22,7 +22,7 @@ namespace SpriteCompiler.AI
             this.heuristicFn = heuristicFn;
         }
         
-        public IDictionary<A, S> Successors(S state)
+        public IEnumerable<Tuple<A, S>> Successors(S state)
         {
             return successorFn.Successors(state);
         }

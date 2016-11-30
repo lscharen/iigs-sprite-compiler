@@ -1,9 +1,10 @@
 ﻿namespace SpriteCompiler.AI
 {
+    using System;
     using System.Collections.Generic;
 
     public interface ISuccessorFunction<A, S>
     {
-        IDictionary<A, S> Successors(S state);
+        IEnumerable<Tuple<A, S>> Successors(S state);
     }
 }
