@@ -118,4 +118,31 @@ namespace SpriteCompiler.Problem
                 );
         }
     }
+
+    public sealed class STACK_REL_16_BIT_IMMEDIATE_STORE : CodeSequence
+    {
+        private readonly ushort value;
+        private readonly byte offset;
+
+        public STACK_REL_16_BIT_IMMEDIATE_STORE(ushort value, byte offset) : base(8) { this.value = value; this.offset = offset; }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.A = _.A.LoadConstant(value);
+                _.RemoveByte((ushort)(offset + _.S.Value));
+                _.RemoveByte((ushort)(offset + _.S.Value + 1));
+            });
+        }
+
+        public override string ToString()
+        {
+            return String.Join("\n",
+                    FormatLine("", "LDA", "#$" + value.ToString("X4"), "3 cycles"),
+                    FormatLine("", "STA", offset.ToString("X2") + ",s", "5 cycles")
+                );
+        }
+    }
+
 }

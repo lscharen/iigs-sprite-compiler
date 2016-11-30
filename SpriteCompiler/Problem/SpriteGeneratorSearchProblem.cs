@@ -242,6 +242,34 @@ namespace SpriteCompiler.Problem
                 actions.Add(new SHORT_M());
 
                 // Add any possible 16-bit data manipulations
+                if (state.S.IsScreenOffset)
+                {
+                    var addr = state.S.Value;
+
+                    // Look for consecutive bytes
+                    var local = state.Bytes.Where(WithinRangeOf(addr, 257)).ToList(); // 16-bit value can extend to the 256th byte
+                    var words = local
+                        .Skip(1)
+                        .Select((x, i) => new { High = x, Low = local[i] })
+                        .Where(p => p.Low.Offset == (p.High.Offset - 1))
+                        .ToList();
+                    
+                    foreach (var word in words)
+                    {
+                        var offset = (byte)(word.Low.Offset - addr);
+                        var data = (ushort)(word.Low.Data + (word.High.Data << 8));
+                        actions.Add(new STACK_REL_16_BIT_IMMEDIATE_STORE(data, offset));
+
+                    }
+
+                    // We can LDA #$XXXX / STA X,s for any values within 256 bytes of the current address
+                    foreach (var datum in state.Bytes.Where(WithinRangeOf(addr, 256)))
+                    {
+                        var offset = (byte)(datum.Offset - addr);
+                        actions.Add(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, offset));
+                    }
+                }
+
             }
             else
             {
@@ -252,8 +280,8 @@ namespace SpriteCompiler.Problem
                 {
                     var addr = state.S.Value;
 
-                    // We can LDA #$XX / STA X,s for any values within 256 bytes of the curren address
-                    foreach (var datum in state.Bytes.Where(x => (x.Offset - addr) < 255))
+                    // We can LDA #$XX / STA X,s for any values within 256 bytes of the current address
+                    foreach (var datum in state.Bytes.Where(WithinRangeOf(addr, 256)))
                     {
                         var offset = datum.Offset - addr;
                         actions.Add(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, (byte)offset));
@@ -263,6 +291,11 @@ namespace SpriteCompiler.Problem
 
             // Run through the actions to create a dictionary
             return actions.ToDictionary(x => x, x => x.Apply(state));
+        }
+         
+        private Func<SpriteByte, bool> WithinRangeOf(int addr, int range)
+        {
+            return x => (x.Offset >= addr) && ((x.Offset - addr) < range);
         }
     }
 
