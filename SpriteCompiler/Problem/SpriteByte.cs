@@ -19,6 +19,7 @@ namespace SpriteCompiler.Problem
         }
 
         public SpriteByte(byte data, byte mask, ushort offset)
+            : this()
         {
             Data = data;
             Mask = mask;

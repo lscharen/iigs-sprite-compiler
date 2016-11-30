@@ -98,7 +98,10 @@ namespace SpriteCompiler.Problem
         {
             var other = new SpriteGeneratorState(this);
 
-            f?.Invoke(other);
+            if (f != null)
+            {
+                f(other);
+            }
 
             return other;
         }
@@ -193,6 +196,24 @@ namespace SpriteCompiler.Problem
     {
         public IDictionary<CodeSequence, SpriteGeneratorState> Successors(SpriteGeneratorState state)
         {
+            // This is the work-horse of the compiler.  For a given state we need to enumerate all of the
+            // potential next operations.
+            //
+            // 1. If there are 16-bits of data at then current offset, we can
+            //    a. Use one of the cached valued in A/X/Y/D if they match (4 cycles)
+            //    b. Use a PEA to push immediate values (5 cycles)
+            //    c. Load a value into A/X/Y and then push (7 cycles, only feasible if the value appears elsewhere in the sprite)
+            //    d. Load the value into D and then push (9 cycles, and leaves A = D)
+            //
+            // 2. Move the stack
+            //    a. Add a value directly (7 cycles, A = unknown)
+            //    b. Skip 1 byte (6 cycles, A = unknown TSC/DEC/TSC)
+            //    c. Multiple skips (LDA X,s/AND/ORA/STA = 16/byte,  ADC #/TCS/LDX #/PHX = 10/byte
+            //
+            // 3. Single-byte at the end of a solid run
+            //    a. If no registers are 8-bit, LDA #Imm/STA 0,s (8 cycles, sets Acc)
+            //    b. If any reg is already 8-bit, LDA #imm/PHA (6 cycles)
+
             var actions = new List<CodeSequence>();
 
             // If the accumulator holds an offset then we could move to any byte position.
