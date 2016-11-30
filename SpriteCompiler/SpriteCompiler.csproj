@@ -69,8 +69,17 @@
     <Compile Include="AI\GraphSearch.cs" />
     <Compile Include="AI\TreeSearch.cs" />
     <Compile Include="Problem\CodeSequence.cs" />
+    <Compile Include="Problem\IntegerPathCost.cs" />
+    <Compile Include="Problem\Register.cs" />
     <Compile Include="Problem\SpriteByte.cs" />
+    <Compile Include="Problem\SpriteGeneratorGoalTest.cs" />
+    <Compile Include="Problem\SpriteGeneratorHeuristicFunction.cs" />
+    <Compile Include="Problem\SpriteGeneratorNodeExpander.cs" />
+    <Compile Include="Problem\SpriteGeneratorSearchNode.cs" />
     <Compile Include="Problem\SpriteGeneratorSearchProblem.cs" />
+    <Compile Include="Problem\SpriteGeneratorState.cs" />
+    <Compile Include="Problem\SpriteGeneratorStepCost.cs" />
+    <Compile Include="Problem\SpriteGeneratorSuccessorFunction.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

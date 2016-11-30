@@ -113,9 +113,9 @@ namespace SpriteCompiler.Problem
         public override string ToString()
         {
             return String.Join("\n",
-                    FormatLine("", "LDA", "#$" + value.ToString("X2"), "2 cycles"),
-                    FormatLine("", "STA", offset.ToString("X2") + ",s", "4 cycles")
-                );
+                FormatLine("", "LDA", "#$" + value.ToString("X2"), "2 cycles"),
+                FormatLine("", "STA", offset.ToString("X2") + ",s", "4 cycles")
+            );
         }
     }
 
@@ -131,18 +131,39 @@ namespace SpriteCompiler.Problem
             return state.Clone(_ =>
             {
                 _.A = _.A.LoadConstant(value);
-                _.RemoveByte((ushort)(offset + _.S.Value));
-                _.RemoveByte((ushort)(offset + _.S.Value + 1));
+                _.RemoveWord((ushort)(offset + _.S.Value));
             });
         }
 
         public override string ToString()
         {
             return String.Join("\n",
-                    FormatLine("", "LDA", "#$" + value.ToString("X4"), "3 cycles"),
-                    FormatLine("", "STA", offset.ToString("X2") + ",s", "5 cycles")
-                );
+                FormatLine("", "LDA", "#$" + value.ToString("X4"), "3 cycles"),
+                FormatLine("", "STA", offset.ToString("X2") + ",s", "5 cycles")
+            );
         }
     }
+
+    public sealed class PEA : CodeSequence
+    {
+        private readonly ushort value;
+
+        public PEA(ushort value) : base(5) { this.value = value; }
+    
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.S.Add(-2);
+                _.RemoveWord((ushort)(_.S.Value - 1));
+            });
+        }
+
+        public override string ToString()
+        {
+            return FormatLine("", "PEA", "$" + value.ToString("X4"), "5 cycles");
+        }
+    }
+
 
 }
