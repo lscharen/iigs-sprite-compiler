@@ -4,9 +4,9 @@ A sprite compiler that targets 16-bit 65816 assembly code on the Apple IIgs comp
 
 ## Example
 
-The compiler takes a simple masked, sparse byte sequence which are represented by (data, mask, offset) tuples.  During the search, it tracked the state of the 65816 CPU registers in order to find an optimal sequence if operations to generated the sprite data.  The space of possible actions are defined by the subclasses of the CodeSequence class.
+The compiler takes a simple masked, sparse byte sequence which are represented by (data, mask, offset) tuples.  During the search, it tracks the state of the 65816 CPU registers in order to find an optimal sequence of operations to generated the sprite data.  The space of possible actions are defined by the subclasses of the CodeSequence class.
 
-Currently, the compile can only handle short, unmasked sequences, but it does correctly find the optimal code sequences.  Here is a sample of the code that the compiler generates 
+Currently, the compiler can only handle short, unmasked sequences, but it does correctly find optimal code sequences.  Here is a sample of the code that the compiler generates 
 
 ### Data = $11 ###
 
@@ -63,7 +63,7 @@ Currently, the compile can only handle short, unmasked sequences, but it does co
 ```
 ## Limitations ##
 
-The current state representation removes data from the sparse byte array whenever a store action is queued.  This prevents certain optimization that redundently store the same byte more than once, in order to minimize other operations.  For example, the byte sequence `$11 $22 $22` currently generated the following, sub-optimal code sequence
+The current state representation removes data from the sparse byte array whenever a store action is queued.  This prevents certain optimizations that redundently store the same byte more than once, in order to minimize other operations.  For example, the byte sequence `$11 $22 $22` currently generates the following, sub-optimal code sequence
 
 ```
 	TCS		; 2 cycles
@@ -87,7 +87,7 @@ The optimal code sequence is
 ; Total Cost = 18 cycles
 ```
 
-Notice that byte 1 ($22) is loaded redundently, which results in the 16-bit LDA/STA code being 2 cycles slower that the equivalent 8-bit code.  However, this 2-cycle penalty is more than made up for by the saving gained from avoiding the 6-cycle SEP/REP pair in order to enter and exit 8-bit mode, resulting in a net savings of 4 cycles.
+Notice that byte 1 ($22) is loaded redundently, which results in the 16-bit LDA/STA code being 2 cycles slower than the equivalent 8-bit code.  However, this 2-cycle penalty is more than made up for by the savings gained from avoiding the 6-cycle SEP/REP pair in order to enter and exit 8-bit mode, resulting in a net savings of 4 cycles.
 ## License
 
 MIT License
