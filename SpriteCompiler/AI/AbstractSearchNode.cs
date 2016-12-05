@@ -43,5 +43,7 @@
                 pathCost = HasParent ? parent.PathCost.Add(value) : value;
             }
         }
+
+        virtual public C EstCost { get { return PathCost; } }
     }
 }

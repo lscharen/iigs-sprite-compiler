@@ -22,6 +22,9 @@ namespace SpriteCompiler.Problem
         // Function to generate a new state based on the code's operation
         public abstract SpriteGeneratorState Apply(SpriteGeneratorState state);
 
+        // Funtion to emit the source code
+        public abstract string Emit();
+
         // Helper function for ToString implementations
         protected string FormatLine(string label, string opcode, string operand, string comment)
         {
@@ -50,6 +53,11 @@ namespace SpriteCompiler.Problem
 
         public override string ToString()
         {
+            return (offset == 0) ? "TSC" : ("ADC #" + offset.ToString() + " / TSC");
+        }
+
+        public override string Emit()
+        {
             if (offset == 0)
             {
                 return FormatLine("", "TCS", "", "2 cycles");
@@ -75,6 +83,11 @@ namespace SpriteCompiler.Problem
 
         public override string ToString()
         {
+            return "SEP #$10";
+        }
+
+        public override string Emit()
+        {
             return FormatLine("", "SEP", "#$10", "3 cycles");
         }
     }
@@ -89,6 +102,11 @@ namespace SpriteCompiler.Problem
         }
 
         public override string ToString()
+        {
+            return "REP #$10";
+        }
+
+        public override string Emit()
         {
             return FormatLine("", "REP", "#$10", "3 cycles");
         }
@@ -112,10 +130,41 @@ namespace SpriteCompiler.Problem
 
         public override string ToString()
         {
+            return "LDA #$" + value.ToString("X2") + " / STA " + offset.ToString("X2") + ",s";
+        }
+
+        public override string Emit()
+        {
             return String.Join("\n",
                 FormatLine("", "LDA", "#$" + value.ToString("X2"), "2 cycles"),
                 FormatLine("", "STA", offset.ToString("X2") + ",s", "4 cycles")
             );
+        }
+    }
+
+    public sealed class STACK_REL_16_BIT_STORE : CodeSequence
+    {
+        private readonly ushort value;
+        private readonly byte offset;
+
+        public STACK_REL_16_BIT_STORE(ushort value, byte offset) : base(5) { this.value = value; this.offset = offset; }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.RemoveWord((ushort)(offset + _.S.Value));
+            });
+        }
+
+        public override string ToString()
+        {
+            return "STA " + offset.ToString("X2") + ",s";
+        }
+
+        public override string Emit()
+        {
+            return FormatLine("", "STA", offset.ToString("X2") + ",s", "5 cycles");
         }
     }
 
@@ -137,9 +186,44 @@ namespace SpriteCompiler.Problem
 
         public override string ToString()
         {
+            return "LDA #$" + value.ToString("X4") + " / STA " + offset.ToString("X2") + ",s";
+        }
+
+        public override string Emit()
+        {
             return String.Join("\n",
                 FormatLine("", "LDA", "#$" + value.ToString("X4"), "3 cycles"),
                 FormatLine("", "STA", offset.ToString("X2") + ",s", "5 cycles")
+            );
+        }
+    }
+
+    public sealed class LOAD_16_BIT_IMMEDIATE_AND_PUSH : CodeSequence
+    {
+        private readonly ushort value;
+
+        public LOAD_16_BIT_IMMEDIATE_AND_PUSH(ushort value) : base(7) { this.value = value; }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.A = _.A.LoadConstant(value);
+                _.RemoveWord((ushort)(_.S.Value - 1));
+                _.S = _.S.Add(-2);
+            });
+        }
+
+        public override string ToString()
+        {
+            return "LDA #$" + value.ToString("X4") + " / PHA";
+        }
+
+        public override string Emit()
+        {
+            return String.Join("\n",
+                FormatLine("", "LDA", "#$" + value.ToString("X4"), "3 cycles"),
+                FormatLine("", "PHA", "", "4 cycles")
             );
         }
     }
@@ -154,16 +238,43 @@ namespace SpriteCompiler.Problem
         {
             return state.Clone(_ =>
             {
-                _.S.Add(-2);
                 _.RemoveWord((ushort)(_.S.Value - 1));
+                _.S = _.S.Add(-2);
             });
         }
 
         public override string ToString()
         {
+            return "PEA $" + value.ToString("X4");
+        }
+
+        public override string Emit()
+        {
             return FormatLine("", "PEA", "$" + value.ToString("X4"), "5 cycles");
         }
     }
 
+    public sealed class PHA : CodeSequence
+    {
+        public PHA() : base(4) { }
 
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.RemoveWord((ushort)(_.S.Value - 1));
+                _.S = _.S.Add(-2);
+            });
+        }
+
+        public override string ToString()
+        {
+            return "PHA";
+        }
+
+        public override string Emit()
+        {
+            return FormatLine("", "PHA", "", "4 cycles");
+        }
+    }
 }

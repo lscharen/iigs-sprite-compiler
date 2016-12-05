@@ -20,7 +20,8 @@
         {
             foreach (var item in items)
             {
-                queue.Enqueue(item, item.PathCost);
+                Console.WriteLine("Enqueuing " + item + " with cost " + item.EstCost);
+                queue.Enqueue(item, item.EstCost);
             }
         }
 
@@ -31,7 +32,7 @@
 
         public void Enqueue(T item)
         {
-            queue.Enqueue(item, item.PathCost);
+            queue.Enqueue(item, item.EstCost);
         }
 
         public T Remove()

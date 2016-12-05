@@ -36,6 +36,11 @@
             return new Register(Value + offset, Tag);
         }
 
+        public static Register Constant(int value)
+        {
+            return new Register(value, DataType.LITERAL);
+        }
+
         public Register LoadConstant(int value)
         {
             return new Register(value, DataType.LITERAL);
@@ -50,7 +55,18 @@
 
         public override string ToString()
         {
-            return string.Format("{0} ({1})", Tag, Value.ToString("X4"));
+            switch (Tag)
+            {
+                default:
+                case DataType.UNINITIALIZED:
+                    return " ----";
+
+                case DataType.SCREEN_OFFSET:
+                    return "*" + Value.ToString("X4");
+
+                case DataType.LITERAL:
+                    return " " + Value.ToString("X4");
+            }
         }
 
         public override bool Equals(object obj)

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 namespace SpriteCompiler.AI
 {
+    using System.Linq;
+
     public abstract class InformedNodeExpander<A, S, T, C> : INodeExpander<A, S, T, C>
         where T : HeuristicSearchNode<A, S, T, C>
         where C : IPathCost<C>, new()
@@ -11,15 +13,23 @@ namespace SpriteCompiler.AI
 
         public IEnumerable<T> Expand(ISearchProblem<A, S, C> problem, T node)
         {
-            foreach (var successor in problem.Successors(node.State))
+            var successors = problem.Successors(node.State);
+
+            // Debug
+            Console.WriteLine(String.Format("There are {0} successors for {1}", successors.Count(), node));
+            Console.WriteLine(String.Format("This node has a current path cost of {0}", node.PathCost));
+
+            foreach (var successor in successors)
             {
                 var action = successor.Item1;
                 var state = successor.Item2;
                 var next = CreateNode(node, state);
-
-                next.Action = action;
+                
+                next.Action = action;                
                 next.StepCost = problem.StepCost(node.State, action, state);
                 next.Heuristic = problem.Heuristic(state);
+
+                Console.WriteLine("   Action = " + next.Action + ", g(n') = " + next.PathCost + ", h(n') = " + next.Heuristic);
 
                 yield return next;
             }

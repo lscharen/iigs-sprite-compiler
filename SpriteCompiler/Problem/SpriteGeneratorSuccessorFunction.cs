@@ -5,6 +5,42 @@
     using System.Collections.Generic;
     using System.Linq;
 
+    public static class StateHelpers
+    {
+        public static byte? TryGetStackByte(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data)
+        {
+            SpriteByte top;
+            if (state.S.IsScreenOffset && data.TryGetValue((ushort)state.S.Value, out top))
+            {
+                return top.Data;
+            }
+
+            return null;
+        }
+
+        public static ushort? TryGetStackWord(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data)
+        {
+            return TryGetStackWord(state, data, 0);
+        }
+
+        public static ushort? TryGetStackWord(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data, int offset)
+        {
+            SpriteByte high;
+            SpriteByte low;
+            if (state.S.IsScreenOffset && (state.S.Value + offset) > 0 && data.TryGetValue((ushort)(state.S.Value + offset), out high) && data.TryGetValue((ushort)(state.S.Value + offset - 1), out low))
+            {
+                return (ushort)(low.Data + (high.Data << 8));
+            }
+
+            return null;
+        }
+
+        public static Tuple<CodeSequence, SpriteGeneratorState> Apply(this SpriteGeneratorState state, CodeSequence code)
+        {
+            return Tuple.Create(code, code.Apply(state));
+        }
+    }
+
     public sealed class SpriteGeneratorSuccessorFunction : ISuccessorFunction<CodeSequence, SpriteGeneratorState>
     {
         public IEnumerable<Tuple<CodeSequence, SpriteGeneratorState>> Successors(SpriteGeneratorState state)
@@ -27,48 +63,80 @@
             //    a. If no registers are 8-bit, LDA #Imm/STA 0,s (8 cycles, sets Acc)
             //    b. If any reg is already 8-bit, LDA #imm/PHA (6 cycles)
             //
-            // We al
-            var actions = new List<CodeSequence>();
+            // We always try to return actions that write data since that moves us toward the goal state
+            
+            // Make it more convenient to get data by offset (this will probably be the representation of the state, eventually)
             var bytes = state.Bytes.ToDictionary(x => x.Offset, x => x);
 
-            // If the accumulator holds an offset then we could move to any byte position.
-            if (state.A.IsScreenOffset && !state.S.IsScreenOffset)
+            // Get the current byte and current word that exist at the current stack location
+            var topByte = state.TryGetStackByte(bytes);
+            var topWord = state.TryGetStackWord(bytes);
+            var nextWord = state.TryGetStackWord(bytes, -2); // Also get the next value below the current word
+
+            // We can always perform a PEA regardless of the register widths
+            if (topWord.HasValue)
             {
-                foreach (var datum in state.Bytes)
+                yield return state.Apply(new PEA(topWord.Value));
+
+                // If any of the registers happen to match the value, we can do an optimized PHA/X/Y/D operations. Any one
+                // PHx is as good as another and cannot affect the state, so just pick the first one.
+                if (state.LongA)
                 {
-                    actions.Add(new MOVE_STACK(datum.Offset - state.A.Value));
+                    if (state.A.IsLiteral && state.A.Value == topWord.Value)
+                    {
+                        yield return state.Apply(new PHA());
+                    }
+                    else
+                    {
+                        yield return state.Apply(new LOAD_16_BIT_IMMEDIATE_AND_PUSH(topWord.Value));
+                    }
+
+                    //else if (state.X.IsLiteral && state.X.Value == topWord.Value) { }
+                    //else if (state.Y.IsLiteral && state.Y.Value == topWord.Value) { }
+                    //else if (state.D.IsLiteral && state.D.Value == topWord.Value) { }
+
+                    // If the top two workd match, it might be worthwhile to load the accumulator to start immediate PHAs
                 }
             }
 
-            // If the accumulator and stack are both initialized, only propose moves to locations
-            // before and after the current 256 byte stack-relative window
-            if (state.A.IsScreenOffset && state.S.IsScreenOffset)
+            // If there is a valid byte, then we can look for an 8-bit push, or an immediate mode LDA #XX/STA 0,s
+            if (topByte.HasValue)
             {
-                var addr = state.S.Value;
-                foreach (var datum in state.Bytes.Where(x => (x.Offset - addr) > 255 || (x.Offset - addr) < 0))
+                if (!state.LongA)
                 {
-                    actions.Add(new MOVE_STACK(datum.Offset - state.A.Value));
+                    yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(topByte.Value, 0));
                 }
             }
 
-            // If the stack is valid on a word (consecutive bytes), when we can alway do a PEA
-            if (state.S.IsScreenOffset && state.S.Value > 0)
+            // If the accumulator holds an offset then we could move to any byte position, but it is only beneficial to
+            // move to the first or last byte of each span.  So , take the first byte and then look for any
+            if (state.A.IsScreenOffset && !state.S.IsScreenOffset && state.LongA)
             {
-                var addr = state.S.Value;
-                if (bytes.ContainsKey((ushort)addr) && bytes.ContainsKey((ushort)(addr - 1)))
+                for (var i = 0; i < state.Bytes.Count; i++)
                 {
-                    var high = bytes[(ushort)addr].Data;
-                    var low = bytes[(ushort)(addr - 1)].Data;
+                    if (i == 0)
+                    {
+                        yield return state.Apply(new MOVE_STACK(state.Bytes[i].Offset - state.A.Value));
+                        continue;
+                    }
 
-                    var word = (ushort)(low + (high << 8));
-                    actions.Add(new PEA(word));
+                    if (i == state.Bytes.Count - 1)
+                    {
+                        yield return state.Apply(new MOVE_STACK(state.Bytes[i].Offset - state.A.Value));
+                        continue;
+                    }
+
+                    if ((state.Bytes[i].Offset - state.Bytes[i-1].Offset) > 1)
+                    {
+                        yield return state.Apply(new MOVE_STACK(state.Bytes[i].Offset - state.A.Value));
+                    }
                 }
             }
 
             // It is always permissible to move to/from 16 bit mode
             if (state.LongA)
             {
-                actions.Add(new SHORT_M());
+                yield return state.Apply(new SHORT_M());
 
                 // Add any possible 16-bit data manipulations
                 if (state.S.IsScreenOffset)
@@ -87,21 +155,21 @@
                     {
                         var offset = (byte)(word.Low.Offset - addr);
                         var data = (ushort)(word.Low.Data + (word.High.Data << 8));
-                        actions.Add(new STACK_REL_16_BIT_IMMEDIATE_STORE(data, offset));
 
-                    }
-
-                    // We can LDA #$XXXX / STA X,s for any values within 256 bytes of the current address
-                    foreach (var datum in state.Bytes.Where(WithinRangeOf(addr, 256)))
-                    {
-                        var offset = (byte)(datum.Offset - addr);
-                        actions.Add(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, offset));
+                        if (data == state.A.Value)
+                        {
+                            yield return state.Apply(new STACK_REL_16_BIT_STORE(data, offset));
+                        }
+                        else
+                        {
+                            yield return state.Apply(new STACK_REL_16_BIT_IMMEDIATE_STORE(data, offset));
+                        }
                     }
                 }
             }
             else
             {
-                actions.Add(new LONG_M());
+                yield return state.Apply(new LONG_M());
 
                 // Add any possible 8-bit manipulations
                 if (state.S.IsScreenOffset)
@@ -112,13 +180,21 @@
                     foreach (var datum in state.Bytes.Where(WithinRangeOf(addr, 256)))
                     {
                         var offset = datum.Offset - addr;
-                        actions.Add(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, (byte)offset));
+                        yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, (byte)offset));
                     }
                 }
             }
 
-            // Run through the actions to create a dictionary
-            return actions.Select(x => Tuple.Create(x, x.Apply(state)));
+            // If the accumulator and stack are both initialized, only propose moves to locations
+            // before and after the current 256 byte stack-relative window
+            if (state.A.IsScreenOffset && state.S.IsScreenOffset && state.LongA)
+            {
+                var addr = state.S.Value;
+                foreach (var datum in state.Bytes.Where(x => (x.Offset - addr) > 255 || (x.Offset - addr) < 0))
+                {
+                    yield return state.Apply(new MOVE_STACK(datum.Offset - state.A.Value));
+                }
+            }
         }
 
         private Func<SpriteByte, bool> WithinRangeOf(int addr, int range)

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
 
     public abstract class AbstractAISearch<A, S, T, C>
@@ -46,6 +47,7 @@
             while (!fringe.Empty)
             {
                 var node = fringe.Remove();
+                Console.WriteLine(string.Format("Removed {0} from the queue with g = {1}, c(n, n') = {2}", node.State, node.PathCost, node.StepCost));
 
                 if (problem.IsGoal(node.State))
                 {

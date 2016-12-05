@@ -9,8 +9,17 @@
         public HeuristicSearchNode(T node, S state)
             : base(node, state)
         {
+            Heuristic = new C();
         }
 
         public C Heuristic { get; set; }
+
+        public override C EstCost
+        {
+            get
+            {
+                return PathCost.Add(Heuristic);
+            }
+        }
     }
 }

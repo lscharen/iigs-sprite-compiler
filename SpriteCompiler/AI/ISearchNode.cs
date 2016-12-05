@@ -12,6 +12,7 @@
     public interface ISearchNode<A, S, T, C> : ISearchNode<C> where C : IPathCost<C>
     {
         A Action { get; set; }
+        C PathCost { get; }
         C StepCost { get; set; }
         int Depth { get; }
         S State { get; }
@@ -20,6 +21,6 @@
 
     public interface ISearchNode<C>
     {
-        C PathCost { get; }
+        C EstCost { get; }
     }
 }

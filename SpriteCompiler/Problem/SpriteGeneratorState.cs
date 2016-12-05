@@ -42,6 +42,11 @@
             P = other.P;
         }
 
+        public override string ToString()
+        {
+            return String.Format("A = {0:X4}, X = {1}, Y = {2}, S = {3}, D = {4}, P = {5:X2}", A, X, Y, S, D, P);
+        }
+
         public void RemoveWord(ushort offset)
         {
             var total = Bytes.RemoveAll(x => x.Offset == offset || x.Offset == (offset + 1));
@@ -72,6 +77,10 @@
             return other;
         }
 
+        // A better state representation would be to have an array of offsets and a static 
+        // data and mask array.  Then the state is just the locations and registers, rather
+        // than a full copy of the data
+
         public List<SpriteByte> Bytes { get; private set; }
         public bool IsEmpty { get { return Bytes.Count == 0; } }
 
@@ -86,6 +95,9 @@
         public Register S { get; set; }  // S is always an offset, not a literal number
 
         public byte P { get; set; }
+
+        public const byte LONG_A = 0x10;
+        public const byte LONG_I = 0x20;
 
         public override bool Equals(object obj)
         {
