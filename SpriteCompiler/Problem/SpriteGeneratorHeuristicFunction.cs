@@ -46,17 +46,15 @@
             // An even-length run can be done, at best in 4 cycles/word
             // An odd-length run is even + 3 cycles/byte
 
-            var count = state.Bytes.Count;
+            if (state.IsEmpty) return 0;
 
-            if (count == 0) return 0;
-
-            var offsets = state.Bytes.Select(x => x.Offset).OrderBy(x => x).ToList();
+            var offsets = state.RemainingBytes();
             var start = offsets[0];
             var stack = state.S.Value;
             var curr = start;
             var cost = 0;
 
-            for (int i = 1; i < count; i++)
+            for (int i = 1; i < offsets.Count; i++)
             {
                 var prev = curr;
                 curr  = offsets[i];

@@ -6,19 +6,13 @@
 
     public class SpriteGeneratorState : IEquatable<SpriteGeneratorState>
     {
+        // Single static reference to the original data set
+        public static List<SpriteByte> DATASET = null;
+
         public SpriteGeneratorState()
-            : this(new SpriteByte[0])
         {
-        }
-
-        public SpriteGeneratorState(byte[] data)
-            : this(data.Select((x, i) => new SpriteByte(x, (ushort)i)))
-        {
-        }
-
-        public SpriteGeneratorState(IEnumerable<SpriteByte> bytes)
-        {
-            Bytes = bytes.ToList();
+            // The closed list contains all of the bytes that have been written
+            Closed = new HashSet<ushort>();
 
             // Initialize the CPU state
             A = Register.INITIAL_OFFSET; // the address to draw the sprite is passed in, this is a run-time value
@@ -33,7 +27,7 @@
 
         private SpriteGeneratorState(SpriteGeneratorState other)
         {
-            Bytes = new List<SpriteByte>(other.Bytes);
+            Closed = new HashSet<ushort>(other.Closed);
             A = other.A;
             X = other.X;
             Y = other.Y;
@@ -49,20 +43,21 @@
 
         public void RemoveWord(ushort offset)
         {
-            var total = Bytes.RemoveAll(x => x.Offset == offset || x.Offset == (offset + 1));
-            if (total != 2)
-            {
-                throw new ArgumentException(string.Format("Cannot remove word at {0}", offset));
-            }
+            Closed.Add(offset);
+            Closed.Add((ushort)(offset + 1));
         }
 
         public void RemoveByte(ushort offset)
         {
-            var total = Bytes.RemoveAll(x => x.Offset == offset);
-            if (total != 1)
-            {
-                throw new ArgumentException(string.Format("Cannot remove byte at {0}", offset));
-            }
+            Closed.Add(offset);
+        }
+
+        public List<ushort> RemainingBytes()
+        {
+            return DATASET
+                .Select(x => x.Offset)
+                .Where(x => !Closed.Contains(x))
+                .ToList();                
         }
 
         public SpriteGeneratorState Clone(Action<SpriteGeneratorState> f = null)
@@ -81,8 +76,8 @@
         // data and mask array.  Then the state is just the locations and registers, rather
         // than a full copy of the data
 
-        public List<SpriteByte> Bytes { get; private set; }
-        public bool IsEmpty { get { return Bytes.Count == 0; } }
+        public ISet<ushort> Closed { get; private set; }
+        public bool IsEmpty { get { return Closed.Count == DATASET.Count; } }
 
         public bool LongA { get { return (P & 0x10) == 0x10; } }
         public bool LongI { get { return (P & 0x20) == 0x20; } }
@@ -107,7 +102,7 @@
         public bool Equals(SpriteGeneratorState other)
         {
             // Two states are equal if the bytes are the same and all registers are the same
-            return Bytes.SequenceEqual(other.Bytes) &&
+            return Closed.SetEquals(other.Closed) &&
                 A.Equals(other.A) &&
                 X.Equals(other.X) &&
                 Y.Equals(other.Y) &&
