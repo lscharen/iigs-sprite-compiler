@@ -80,6 +80,32 @@ namespace SpriteCompiler.Test
         }
 
         [TestMethod]
+        public void TestOverlappingWrite()
+        {
+            // Arrange
+            var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
+            var search = SpriteGeneratorSearchProblem.Create();
+
+            // Act : solve the problem
+            var solution = search.Search(problem, new SpriteGeneratorState(new byte[] { 0x11, 0x22, 0x22 }));
+
+            // Assert
+            //
+            // Solution should be 18 cycles
+            //
+            // TCS          
+            // LDA #$2211
+            // STA 0,s   
+            // LDA #$2222
+            // STA 1,s    = 18 cycles
+
+            // Write out the solution
+            WriteOutSolution(solution);
+
+            Assert.AreEqual(18, (int)solution.Last().PathCost);
+        }
+
+        [TestMethod]
         public void TestConsecutiveWordSprite()
         {
             // Arrange

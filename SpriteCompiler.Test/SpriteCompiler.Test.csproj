@@ -63,6 +63,7 @@
     <Compile Include="HeuristicTests.cs" />
     <Compile Include="RegisterTests.cs" />
     <Compile Include="StateTests.cs" />
+    <Compile Include="MarioTests.cs" />
     <Compile Include="Tests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
