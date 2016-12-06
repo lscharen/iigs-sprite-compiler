@@ -20,7 +20,9 @@
         {
             foreach (var item in items)
             {
+#if DEBUG
                 Console.WriteLine("Enqueuing " + item + " with cost " + item.EstCost);
+#endif
                 queue.Enqueue(item, item.EstCost);
             }
         }

@@ -69,6 +69,11 @@
             }
         }
 
+        public override int GetHashCode()
+        {
+            return Value.GetHashCode() + Tag.GetHashCode();
+        }
+
         public override bool Equals(object obj)
         {
             return Equals(obj as Register);

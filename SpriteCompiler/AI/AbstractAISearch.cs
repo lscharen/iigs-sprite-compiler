@@ -47,8 +47,9 @@
             while (!fringe.Empty)
             {
                 var node = fringe.Remove();
+#if DEBUG
                 Console.WriteLine(string.Format("Removed {0} from the queue with g = {1}, c(n, n') = {2}", node.State, node.PathCost, node.StepCost));
-
+#endif
                 if (problem.IsGoal(node.State))
                 {
                     return Solution(node);

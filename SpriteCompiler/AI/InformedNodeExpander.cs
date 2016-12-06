@@ -16,8 +16,10 @@ namespace SpriteCompiler.AI
             var successors = problem.Successors(node.State);
 
             // Debug
+            #if DEBUG
             Console.WriteLine(String.Format("There are {0} successors for {1}", successors.Count(), node));
             Console.WriteLine(String.Format("This node has a current path cost of {0}", node.PathCost));
+            #endif
 
             foreach (var successor in successors)
             {
@@ -29,8 +31,9 @@ namespace SpriteCompiler.AI
                 next.StepCost = problem.StepCost(node.State, action, state);
                 next.Heuristic = problem.Heuristic(state);
 
+#if DEBUG
                 Console.WriteLine("   Action = " + next.Action + ", g(n') = " + next.PathCost + ", h(n') = " + next.Heuristic);
-
+#endif
                 yield return next;
             }
         }

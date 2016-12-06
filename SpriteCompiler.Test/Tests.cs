@@ -103,8 +103,8 @@ namespace SpriteCompiler.Test
             // Write out the solution
             WriteOutSolution(solution);
 
-            //Assert.AreEqual(3, solution.Count());
-            //Assert.AreEqual(10, (int)solution.Last().PathCost);
+            Assert.AreEqual(6, solution.Count());
+            Assert.AreEqual(25, (int)solution.Last().PathCost);
         }
 
         private void WriteOutSolution(IEnumerable<SpriteGeneratorSearchNode> solution)

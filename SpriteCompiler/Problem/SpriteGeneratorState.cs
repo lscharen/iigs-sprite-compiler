@@ -117,6 +117,18 @@
                 ;
         }
 
+        public override int GetHashCode()
+        {
+            return
+                A.GetHashCode() +
+                X.GetHashCode() +
+                Y.GetHashCode() +
+                D.GetHashCode() +
+                S.GetHashCode() +
+                P.GetHashCode()
+                ;
+        }
+
         public static bool operator ==(SpriteGeneratorState state1, SpriteGeneratorState state2)
         {
             if (((object)state1) == null || ((object)state2) == null)

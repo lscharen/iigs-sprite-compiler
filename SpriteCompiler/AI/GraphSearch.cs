@@ -16,7 +16,7 @@ namespace SpriteCompiler.AI
 
         /// <summary>
         /// Generic graph search.  See page 83 in Russell and Norvig.  This only works in informed
-        /// search if the heuristic is admissible.However, if a heuristic is not admissible and
+        /// search if the heuristic is admissible. However, if a heuristic is not admissible and
         /// you still want to use, that means you should know enough to extend this class or write
         /// your own Search class.
         /// </summary>
