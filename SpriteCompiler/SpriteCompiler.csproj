@@ -94,6 +94,8 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Content Include="Samples\Mario_000.png" />
+    <Content Include="Samples\SpriteX1_000.png" />
     <Content Include="Samples\SpriteX2_000.gif" />
     <Content Include="Samples\SpriteX2_001.gif" />
   </ItemGroup>

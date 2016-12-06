@@ -7,6 +7,24 @@
     using System.Drawing;
     using System.Linq;
 
+    public static class ExtensionMethods
+    {
+        public static void Dump(this int[,] array)
+        {
+            var rows = array.GetLength(1);
+            var cols = array.GetLength(0);
+
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    Console.Write(array[c, r].ToString("X1"));
+                }
+                Console.Write(Environment.NewLine);
+            }
+        }
+
+    }
     public class ApplicationArguments
     {
         public List<string> Data { get; set; }
@@ -27,84 +45,119 @@
 
         static void Main(string[] args)
         {
-            IEnumerable<SpriteByte> data = null;
+            var data = new List<byte>();
+            var mask = new List<byte>();
+            var filename = (string)null;
+            Color? maskColor = null;
+            var sprite = new List<SpriteByte>();
 
-            try
-            {
-                data = args.Select((s, i) => new SpriteByte(Convert.ToByte(s, 16), (ushort)i));
-            }
-            catch (FormatException e)
-            {
-                // If there is only one or two arguments, them marybe the user passed in a file
-                if (args.Length <= 2)
-                {
-                    var palette = new Dictionary<Color, int>();
-                    int nextIndex = 1;
+            var p = new FluentCommandLineParser();
 
-                    // Convert the image / mask to a paletted image
-                    var bitmap = new Bitmap(args[0]);
-                    int[,] buffer = new int[bitmap.Width, bitmap.Height];
+            p.Setup<List<string>>('d', "data")
+                .Callback(_ => data = _.Select(s => Convert.ToByte(s, 16)).ToList());
 
-                    for (int r = 0; r < bitmap.Height; r++)
-                    {
-                        for (int w = 0; w < bitmap.Width; w++)
-                        {
-                            var rgb = bitmap.GetPixel(w, r);
+            p.Setup<List<string>>('m', "mask")
+                .Callback(_ => data = _.Select(s => Convert.ToByte(s, 16)).ToList());
 
-                            if (!palette.ContainsKey(rgb))
-                            {
-                                if (palette.Count >= 15)
-                                {
-                                    throw new Exception("Image cannot have more than 15 unique colors");
-                                }
-                                palette[rgb] = nextIndex++;
-                            }
+            p.Setup<string>('i', "image")
+                .Callback(_ => filename = _);
 
-                            buffer[w, r] = palette[rgb];
-                        }
-                    }
-
-                    // Pair up pixles to build bytes
-                    var sprite = new List<SpriteByte>();
-
-                    for (int r = 0; r < bitmap.Height; r++)
-                    {
-                        for (int w = 0; w < bitmap.Width; w += 2)
-                        {
-                            sprite.Add(new SpriteByte((byte)((buffer[w, r] << 4) + buffer[w + 1, r]), (ushort)(r * 160 + (w / 2))));
-                        }
-                    }
-
-                    data = sprite;
-                }
-            }
-            /*
-            return;
-
-            var p = new FluentCommandLineParser<ApplicationArguments>();
-
-            // specify which property the value will be assigned too.
-            p.Setup<List<string>>(arg => arg.Data)
-             .As('d', "data") // define the short and long option name
-             .Required()      // using the standard fluent Api to declare this Option as required.
-             .Callback(d => d.Select(s => Convert.ToByte(s, 16)).ToArray());
-
-            p.Setup<List<string>>(arg => arg.Mask)
-             .As('m', "mask");
+            p.Setup<string>("bg-color")
+                .Callback(_ => maskColor = Color.FromArgb(0xFF, Color.FromArgb(Convert.ToInt32(_, 16))));
             
-            var result = p.Parse(args);
+            p.Parse(args);
 
-            if (!result.HasErrors)
+            Console.WriteLine("Manual data has " + data.Count + " bytes");
+            Console.WriteLine("Manual mask has " + mask.Count + " bytes");
+            Console.WriteLine("Input filename is " + filename);
+            Console.WriteLine("Image mask color is " + (maskColor.HasValue ? maskColor.ToString() : "(none)"));
+
+            if (!String.IsNullOrEmpty(filename))
             {
-             */
+                var palette = new Dictionary<Color, int>();
+                int nextIndex = 1;
 
-                var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
-                var search = SpriteGeneratorSearchProblem.Create();
+                // Convert the image / mask to a paletted image
+                var bitmap = new Bitmap(filename);
+                int[,] data_buffer = new int[bitmap.Width, bitmap.Height];
+                int[,] mask_buffer = new int[bitmap.Width, bitmap.Height];
 
-                var solution = search.Search(problem, new SpriteGeneratorState(data));
+                Console.WriteLine(String.Format("  Image is {0} x {1}", bitmap.Width, bitmap.Height));
 
-                WriteOutSolution(solution);
-            //}           
+                if (maskColor.HasValue)
+                {
+                    palette[maskColor.Value] = 0;
+                }
+
+                for (int r = 0; r < bitmap.Height; r++)
+                {
+                    for (int w = 0; w < bitmap.Width; w++)
+                    {
+                        var rgb = bitmap.GetPixel(w, r);
+                        
+                        if (!palette.ContainsKey(rgb))
+                        {
+                            if (palette.Count >= 15)
+                            {
+                                throw new Exception("Image cannot have more than 15 unique colors");
+                            }
+                            palette[rgb] = nextIndex++;
+                        }
+
+                        data_buffer[w, r] = palette[rgb];
+
+                        if (maskColor.HasValue)
+                        {
+                            if (rgb.Equals(maskColor.Value))
+                            {
+                                data_buffer[w, r] = 0x0;
+                                mask_buffer[w, r] = 0xF;
+                            }
+                            else
+                            {
+                                data_buffer[w, r] = palette[rgb];
+                                mask_buffer[w, r] = 0x0;
+                            }
+                        }
+                        else
+                        {
+                            data_buffer[w, r] = palette[rgb];
+                        }
+                    }
+                }
+
+                data_buffer.Dump();
+                Console.WriteLine();
+                mask_buffer.Dump();
+
+                // Pair up pixels to build bytes                
+                for (int r = 0; r < bitmap.Height; r++)
+                {
+                    for (int w = 0; w < bitmap.Width; w += 2)
+                    {
+                        var mask_byte = (byte)((mask_buffer[w, r] << 4) + mask_buffer[w + 1, r]);
+                        var data_byte = (byte)((data_buffer[w, r] << 4) + data_buffer[w + 1, r]);
+                        var offset = (ushort)(r * 160 + (w / 2));
+
+                        // Skip fully transparent bytes
+                        if (mask_byte == 0xFF)
+                        {
+                            continue;
+                        }
+
+                        Console.WriteLine(String.Format("Adding ({0:X2}, {1:X2}, {2})", data_byte, mask_byte, offset));
+
+                        sprite.Add(new SpriteByte(data_byte, mask_byte, offset));
+                    }
+                }           
+            }
+
+            var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
+            var search = SpriteGeneratorSearchProblem.Create();
+
+            var solution = search.Search(problem, new SpriteGeneratorState(sprite));
+
+            WriteOutSolution(solution);
         }
     }
 }

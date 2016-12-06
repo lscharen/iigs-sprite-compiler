@@ -53,7 +53,7 @@ namespace SpriteCompiler.Problem
 
         public override string ToString()
         {
-            return (offset == 0) ? "TSC" : ("ADC #" + offset.ToString() + " / TSC");
+            return (offset == 0) ? "TCS" : ("ADC #" + offset.ToString() + " / TCS");
         }
 
         public override string Emit()
