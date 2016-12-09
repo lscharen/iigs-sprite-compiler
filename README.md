@@ -28,6 +28,17 @@ Currently, the compiler can only handle short, unmasked sequences, but it does c
 ; Total Cost = 10 cycles
 ```
 
+### Data = $11 $22 $22
+
+```
+        TCS             ; 2 cycles
+        LDA     #$2222  ; 3 cycles
+        STA     02,s    ; 5 cycles
+        LDA     #$2211  ; 3 cycles
+        STA     01,s    ; 5 cycles
+; Total Cost = 18 cycles
+```
+
 ### Data = $11 $22 $11 $22 ###
 
 ```
@@ -63,31 +74,9 @@ Currently, the compiler can only handle short, unmasked sequences, but it does c
 ```
 ## Limitations ##
 
-The current state representation removes data from the sparse byte array whenever a store action is queued.  This prevents certain optimizations that redundently store the same byte more than once, in order to minimize other operations.  For example, the byte sequence `$11 $22 $22` currently generates the following, sub-optimal code sequence
+The search is quite memory intensive and grows too fast to handle multi-line sprite data yet.  Future versions will
+incorporate more aggressive heuristic and Iterative Deepening A-Star search to mitigate the memory usage.
 
-```
-	TCS		; 2 cycles
-	SEP	#$10	; 3 cycles
-	LDA	#$11	; 2 cycles
-	STA	00,s	; 4 cycles
-	REP	#$10	; 3 cycles
-	LDA	#$2222	; 3 cycles
-	STA	01,s	; 5 cycles
-; Total Cost = 22 cycles
-```
-
-The optimal code sequence is
-
-```
-	TCS		; 2 cycles
-	LDA	#$2211	; 3 cycles
-	STA	00,s	; 5 cycles
-	LDA	#$2222	; 3 cycles
-	STA	01,s	; 5 cycles
-; Total Cost = 18 cycles
-```
-
-Notice that byte 1 ($22) is loaded redundently, which results in the 16-bit LDA/STA code being 2 cycles slower than the equivalent 8-bit code.  However, this 2-cycle penalty is more than made up for by the savings gained from avoiding the 6-cycle SEP/REP pair in order to enter and exit 8-bit mode, resulting in a net savings of 4 cycles.
 ## License
 
 MIT License
