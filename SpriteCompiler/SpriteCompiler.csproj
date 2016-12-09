@@ -58,9 +58,14 @@
     <Compile Include="AI\AStarComparer.cs" />
     <Compile Include="AI\AStarSearch.cs" />
     <Compile Include="AI\BestFirstSearch.cs" />
+    <Compile Include="AI\CostNodeLimiter.cs" />
+    <Compile Include="AI\DepthFirstSearch.cs" />
+    <Compile Include="AI\DepthLimitedNodeExpander.cs" />
+    <Compile Include="AI\DepthLimitedSearch.cs" />
     <Compile Include="AI\HeuristicSearchNode.cs" />
     <Compile Include="AI\IHeuristicFunction.cs" />
     <Compile Include="AI\InformedNodeExpander.cs" />
+    <Compile Include="AI\INodeLimiter.cs" />
     <Compile Include="AI\ISuccessorFunction.cs" />
     <Compile Include="AI\IGoalTest.cs" />
     <Compile Include="AI\INodeExpander.cs" />
@@ -70,6 +75,9 @@
     <Compile Include="AI\ISearchNode.cs" />
     <Compile Include="AI\ISearchProblem.cs" />
     <Compile Include="AI\IStepCostFunction.cs" />
+    <Compile Include="AI\IterativeDeepeningAStarSearch.cs" />
+    <Compile Include="AI\Lifo.cs" />
+    <Compile Include="AI\NodeExpanderDelegator.cs" />
     <Compile Include="AI\SearchProblem.cs" />
     <Compile Include="AI\GraphSearch.cs" />
     <Compile Include="AI\TreeSearch.cs" />

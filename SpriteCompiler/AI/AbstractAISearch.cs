@@ -25,7 +25,7 @@
             this.expander = expander;
         }
 
-        public INodeExpander<A, S, T, C> Expander { get { return expander; } }
+        public INodeExpander<A, S, T, C> Expander { get { return expander; } set { expander = value; } }
 
         public IEnumerable<T> Solution(T node)
         {
