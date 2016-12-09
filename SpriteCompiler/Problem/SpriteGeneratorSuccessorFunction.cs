@@ -7,29 +7,61 @@
 
     public static class StateHelpers
     {
-        public static byte? TryGetStackByte(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data)
+        public static SpriteByte? TryGetStackByte(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data)
         {
             SpriteByte top;
             if (state.S.IsScreenOffset && data.TryGetValue((ushort)state.S.Value, out top))
             {
-                return top.Data;
+                return top;
             }
 
             return null;
         }
 
-        public static ushort? TryGetStackWord(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data)
+        public static SpriteWord? TryGetStackWord(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data)
         {
             return TryGetStackWord(state, data, 0);
         }
 
-        public static ushort? TryGetStackWord(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data, int offset)
+        public static SpriteWord? TryGetStackWord(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data, int offset)
         {
+            // When we get a word, it's permissible for either the high or low byte to not exist, but not both
             SpriteByte high;
             SpriteByte low;
-            if (state.S.IsScreenOffset && (state.S.Value + offset) > 0 && data.TryGetValue((ushort)(state.S.Value + offset), out high) && data.TryGetValue((ushort)(state.S.Value + offset - 1), out low))
+
+            // Make sure the range is within bounds
+            if (state.S.IsScreenOffset && (state.S.Value + offset) > 0)            
             {
-                return (ushort)(low.Data + (high.Data << 8));
+                // Try to get the high byte
+                byte high_data = 0x00;
+                byte high_mask = 0xFF;
+                ushort high_offset = (ushort)(state.S.Value + offset);
+
+                if (data.TryGetValue(high_offset, out high))
+                {
+                    high_data = high.Data;
+                    high_mask = high.Mask;
+                }
+
+                // Try to get the low byte
+                byte low_data = 0x00;
+                byte low_mask = 0xFF;
+                ushort low_offset = (ushort)(state.S.Value + offset - 1);
+
+                if (data.TryGetValue(low_offset, out low))
+                {
+                    low_data = low.Data;
+                    low_mask = low.Mask;
+                }
+            
+                // At least some data need to be visible
+                if (high_mask != 0xFF || low_mask != 0xFF)
+                {
+                    var word_data = (ushort)(low_data + (high_data << 8));
+                    var word_mask = (ushort)(low_mask + (high_mask << 8));
+
+                    return new SpriteWord(word_data, word_mask, low_offset);
+                }
             }
 
             return null;
@@ -74,45 +106,62 @@
             var topWord = state.TryGetStackWord(bytes);
             var nextWord = state.TryGetStackWord(bytes, -2); // Also get the next value below the current word
 
-            // We can always perform a PEA regardless of the register widths
+            // If there is some data at the top of the stack, see what we can do
             if (topWord.HasValue)
             {
-                yield return state.Apply(new PEA(topWord.Value));
-
-                // If any of the registers happen to match the value, we can do an optimized PHA/X/Y/D operations. Any one
-                // PHx is as good as another and cannot affect the state, so just pick the first one.
-                if (state.LongA)
+                // First, the simple case -- the data has no mask
+                if (topWord.Value.Mask == 0x000)
                 {
-                    if (state.A.IsLiteral && state.A.Value == topWord.Value)
+                    // If any of the registers has the exact value we need, then it is always fastest to just push the value
+                    if (state.LongA)
                     {
-                        yield return state.Apply(new PHA());
+                        if (state.A.IsLiteral && state.A.Value == topWord.Value.Data)
+                        {
+                            yield return state.Apply(new PHA());
+                        }
+                        else
+                        {
+                            yield return state.Apply(new PEA(topWord.Value.Data));
+                            yield return state.Apply(new LOAD_16_BIT_IMMEDIATE_AND_PUSH(topWord.Value.Data));
+                        }
                     }
+                    // Otherwise, the only alternative is a PEA instruction
                     else
                     {
-                        yield return state.Apply(new LOAD_16_BIT_IMMEDIATE_AND_PUSH(topWord.Value));
+                        yield return state.Apply(new PEA(topWord.Value.Data));
                     }
-
-                    //else if (state.X.IsLiteral && state.X.Value == topWord.Value) { }
-                    //else if (state.Y.IsLiteral && state.Y.Value == topWord.Value) { }
-                    //else if (state.D.IsLiteral && state.D.Value == topWord.Value) { }
-
-                    // If the top two workd match, it might be worthwhile to load the accumulator to start immediate PHAs
                 }
             }
 
             // If there is a valid byte, then we can look for an 8-bit push, or an immediate mode LDA #XX/STA 0,s
             if (topByte.HasValue)
             {
-                if (!state.LongA)
+                if (topByte.Value.Mask == 0x00)
                 {
-                    yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(topByte.Value, 0));
+                    if (!state.LongA)
+                    {
+                        yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(topByte.Value.Data, 0));
+                    }
                 }
             }
 
             // If the accumulator holds an offset then we could move to any byte position, but it is only beneficial to
+            // either
+            //
+            // 1. Set the stack to the current accumulator value
+            // 2. Set the stack to the start of a contiguous segment
+            // 3. Set the stack to the end of a contiguous segment
+
             // move to the first or last byte of each span.  So , take the first byte and then look for any
             if (state.A.IsScreenOffset && !state.S.IsScreenOffset && state.LongA)
             {
+                // If any of the open bytes are within 255 bytes of the accumulator, consider just 
+                // setting the stack to the accumulator value
+                if (open.Any(x => (x.Offset - state.A.Value) >= 0 && (x.Offset - state.A.Value) < 256))
+                {
+                    yield return state.Apply(new MOVE_STACK(0));
+                }
+
                 for (var i = 0; i < open.Count; i++)
                 {
                     if (i == 0)
@@ -155,14 +204,25 @@
                     {
                         var offset = (byte)(word.Low.Offset - addr);
                         var data = (ushort)(word.Low.Data + (word.High.Data << 8));
+                        var mask = (ushort)(word.Low.Mask + (word.High.Mask << 8));
 
-                        if (data == state.A.Value)
+                        // Easy case when mask is empty
+                        if (mask == 0x0000)
                         {
-                            yield return state.Apply(new STACK_REL_16_BIT_STORE(data, offset));
+                            if (data == state.A.Value)
+                            {
+                                yield return state.Apply(new STACK_REL_16_BIT_STORE(data, offset));
+                            }
+                            else
+                            {
+                                yield return state.Apply(new STACK_REL_16_BIT_IMMEDIATE_STORE(data, offset));
+                            }
                         }
+                        
+                        // Otherwise there is really only one choice LDA / AND / ORA / STA sequence
                         else
                         {
-                            yield return state.Apply(new STACK_REL_16_BIT_IMMEDIATE_STORE(data, offset));
+                            yield return state.Apply(new STACK_REL_16_BIT_READ_MODIFY_WRITE(data, mask, offset));
                         }
                     }
                 }
@@ -180,7 +240,14 @@
                     foreach (var datum in open.Where(WithinRangeOf(addr, 256)))
                     {
                         var offset = datum.Offset - addr;
-                        yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, (byte)offset));
+                        if (datum.Mask == 0x00)
+                        {
+                            yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, (byte)offset));
+                        }
+                        else
+                        {
+                            yield return state.Apply(new STACK_REL_8_BIT_READ_MODIFY_WRITE(datum.Data, datum.Mask, (byte)offset));
+                        }
                     }
                 }
             }

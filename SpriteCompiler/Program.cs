@@ -57,7 +57,7 @@
                 .Callback(_ => data = _.Select(s => Convert.ToByte(s, 16)).ToList());
 
             p.Setup<List<string>>('m', "mask")
-                .Callback(_ => data = _.Select(s => Convert.ToByte(s, 16)).ToList());
+                .Callback(_ => mask = _.Select(s => Convert.ToByte(s, 16)).ToList());
 
             p.Setup<string>('i', "image")
                 .Callback(_ => filename = _);
@@ -155,10 +155,17 @@
             // Set the global state
             var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
             var search = SpriteGeneratorSearchProblem.Create();
-
-            var solution = search.Search(problem, SpriteGeneratorState.Init(data));
-
-            WriteOutSolution(solution);
+            
+            if (data.Count == mask.Count)
+            {
+                var solution = search.Search(problem, SpriteGeneratorState.Init(data, mask));
+                WriteOutSolution(solution);
+            }
+            else
+            {
+                var solution = search.Search(problem, SpriteGeneratorState.Init(data));
+                WriteOutSolution(solution);
+            }
         }
     }
 }

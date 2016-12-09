@@ -142,6 +142,39 @@ namespace SpriteCompiler.Problem
         }
     }
 
+    public sealed class STACK_REL_8_BIT_READ_MODIFY_WRITE : CodeSequence
+    {
+        private readonly byte value;
+        private readonly byte mask;
+        private readonly byte offset;
+
+        public STACK_REL_8_BIT_READ_MODIFY_WRITE(byte value, byte mask, byte offset) : base(12) { this.value = value; this.mask = mask; this.offset = offset; }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.A = Register.UNINITIALIZED;
+                _.RemoveByte((ushort)(offset + _.S.Value));
+            });
+        }
+
+        public override string ToString()
+        {
+            return "LDA " + offset.ToString("X2") + ",s / AND #$" + mask.ToString("X2") + " / ORA #$" + value.ToString("X2") + " / STA " + offset.ToString("X2") + ",s";
+        }
+
+        public override string Emit()
+        {
+            return String.Join("\n",
+                FormatLine("", "LDA", offset.ToString("X2") + ",s", "4 cycles"),
+                FormatLine("", "AND", "#$" + mask.ToString("X2"), "2 cycles"),
+                FormatLine("", "ORA", "#$" + value.ToString("X2"), "2 cycles"),
+                FormatLine("", "STA", offset.ToString("X2") + ",s", "4 cycles")
+            );
+        }
+    }
+
     public sealed class STACK_REL_16_BIT_STORE : CodeSequence
     {
         private readonly ushort value;
@@ -165,6 +198,39 @@ namespace SpriteCompiler.Problem
         public override string Emit()
         {
             return FormatLine("", "STA", offset.ToString("X2") + ",s", "5 cycles");
+        }
+    }
+
+    public sealed class STACK_REL_16_BIT_READ_MODIFY_WRITE : CodeSequence
+    {
+        private readonly ushort value;
+        private readonly ushort mask;
+        private readonly byte offset;
+
+        public STACK_REL_16_BIT_READ_MODIFY_WRITE(ushort value, ushort mask, byte offset) : base(16) { this.value = value; this.mask = mask; this.offset = offset; }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.A = Register.UNINITIALIZED;
+                _.RemoveWord((ushort)(offset + _.S.Value));
+            });
+        }
+
+        public override string ToString()
+        {
+            return "LDA " + offset.ToString("X2") + ",s / AND #$" + mask.ToString("X4") + " / ORA #$" + value.ToString("X4") + " / STA " + offset.ToString("X2") + ",s";
+        }
+
+        public override string Emit()
+        {
+            return String.Join("\n",
+                FormatLine("", "LDA", offset.ToString("X2") + ",s", "5 cycles"),
+                FormatLine("", "AND", "#$" + mask.ToString("X4"), "3 cycles"),
+                FormatLine("", "ORA", "#$" + value.ToString("X4"), "3 cycles"),
+                FormatLine("", "STA", offset.ToString("X2") + ",s", "5 cycles")
+            );
         }
     }
 

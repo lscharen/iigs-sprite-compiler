@@ -18,9 +18,16 @@
             return new SpriteGeneratorState();
         }
 
-        public static SpriteGeneratorState Init(IEnumerable<byte> bytes)
+        public static SpriteGeneratorState Init(IEnumerable<byte> data)
         {
-            return Init(bytes.Select((x, i) => new SpriteByte(x, (ushort)i)));
+            return Init(data.Select((x, i) => new SpriteByte(x, (ushort)i)));
+        }
+
+        public static SpriteGeneratorState Init(IEnumerable<byte> data, IEnumerable<byte> mask)
+        {
+            return Init(data.Zip(mask, (x, y) => new { Data = x, Mask = y })
+                .Select((_, i) => new SpriteByte(_.Data, _.Mask, (ushort)i))
+                .Where(_ => _.Mask != 0xFF));
         }
 
         public SpriteGeneratorState()
