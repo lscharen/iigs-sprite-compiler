@@ -171,7 +171,7 @@ namespace SpriteCompiler.Test
 
             // Assert
             //
-            // The fastest way to draw a consecutive workds hould be
+            // The fastest way to draw a consecutive words should be
             //
             // ADC #7
             // TCS          
@@ -185,6 +185,38 @@ namespace SpriteCompiler.Test
 
             Assert.AreEqual(6, solution.Count());
             Assert.AreEqual(25, (int)solution.Last().PathCost);
+        }
+
+        [TestMethod]
+        public void TestConsecutiveWordSpriteWithMask()
+        {
+            // Arrange
+            var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
+            var search = SpriteGeneratorSearchProblem.Create();
+
+            // Act : solve the problem
+            var data = new byte[] { 0x01, 0x11, 0x22, 0x11, 0x33 };
+            var mask = new byte[] { 0xF0, 0x00, 0x00, 0x00, 0x00 };
+
+            var solution = search.Search(problem, SpriteGeneratorState.Init(data, mask));
+
+            // Assert
+            //
+            // The fastest way to render this data should be
+            //
+            // ADC #4
+            // TCS
+            // PEA $3311
+            // PEA $2211
+            // LDA 0,s
+            // AND #$00F0
+            // ORA #$1101
+            // STA 0,s   = 31 cycles
+
+            // Write out the solution
+            WriteOutSolution(solution);
+
+            Assert.AreEqual(31, (int)solution.Last().PathCost);
         }
 
         private void WriteOutSolution(IEnumerable<SpriteGeneratorSearchNode> solution)
