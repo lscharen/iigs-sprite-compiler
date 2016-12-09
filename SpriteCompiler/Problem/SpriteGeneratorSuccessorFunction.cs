@@ -65,8 +65,9 @@
             //
             // We always try to return actions that write data since that moves us toward the goal state
             
-            // Make it more convenient to get data by offset (this will probably be the representation of the state, eventually)
-            var bytes = state.Bytes.ToDictionary(x => x.Offset, x => x);
+            // Get the list of remaining bytes by removing the closed list from the global sprite
+            var open = SpriteGeneratorState.DATASET.Where(x => !state.Closed.Contains(x.Offset)).ToList();
+            var bytes = open.ToDictionary(x => x.Offset, x => x);
 
             // Get the current byte and current word that exist at the current stack location
             var topByte = state.TryGetStackByte(bytes);
@@ -112,23 +113,23 @@
             // move to the first or last byte of each span.  So , take the first byte and then look for any
             if (state.A.IsScreenOffset && !state.S.IsScreenOffset && state.LongA)
             {
-                for (var i = 0; i < state.Bytes.Count; i++)
+                for (var i = 0; i < open.Count; i++)
                 {
                     if (i == 0)
                     {
-                        yield return state.Apply(new MOVE_STACK(state.Bytes[i].Offset - state.A.Value));
+                        yield return state.Apply(new MOVE_STACK(open[i].Offset - state.A.Value));
                         continue;
                     }
 
-                    if (i == state.Bytes.Count - 1)
+                    if (i == open.Count - 1)
                     {
-                        yield return state.Apply(new MOVE_STACK(state.Bytes[i].Offset - state.A.Value));
+                        yield return state.Apply(new MOVE_STACK(open[i].Offset - state.A.Value));
                         continue;
                     }
 
-                    if ((state.Bytes[i].Offset - state.Bytes[i-1].Offset) > 1)
+                    if ((open[i].Offset - open[i - 1].Offset) > 1)
                     {
-                        yield return state.Apply(new MOVE_STACK(state.Bytes[i].Offset - state.A.Value));
+                        yield return state.Apply(new MOVE_STACK(open[i].Offset - state.A.Value));
                     }
                 }
             }
@@ -143,12 +144,11 @@
                 {
                     var addr = state.S.Value;
 
-                    // Look for consecutive bytes
-                    var local = state.Bytes.Where(WithinRangeOf(addr, 257)).ToList(); // 16-bit value can extend to the 256th byte
+                    // Look for consecutive bytes. The second byte can come from the DATASET
+                    var local = open.Where(WithinRangeOf(addr, 256)).ToList();
                     var words = local
-                        .Skip(1)
-                        .Select((x, i) => new { High = x, Low = local[i] })
-                        .Where(p => p.Low.Offset == (p.High.Offset - 1))
+                        .Where(x => SpriteGeneratorState.DATASET_BY_OFFSET.ContainsKey(x.Offset + 1))
+                        .Select(x => new { Low = x, High = SpriteGeneratorState.DATASET_BY_OFFSET[x.Offset + 1] })
                         .ToList();
 
                     foreach (var word in words)
@@ -177,7 +177,7 @@
                     var addr = state.S.Value;
 
                     // We can LDA #$XX / STA X,s for any values within 256 bytes of the current address
-                    foreach (var datum in state.Bytes.Where(WithinRangeOf(addr, 256)))
+                    foreach (var datum in open.Where(WithinRangeOf(addr, 256)))
                     {
                         var offset = datum.Offset - addr;
                         yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, (byte)offset));
@@ -190,7 +190,7 @@
             if (state.A.IsScreenOffset && state.S.IsScreenOffset && state.LongA)
             {
                 var addr = state.S.Value;
-                foreach (var datum in state.Bytes.Where(x => (x.Offset - addr) > 255 || (x.Offset - addr) < 0))
+                foreach (var datum in open.Where(x => (x.Offset - addr) > 255 || (x.Offset - addr) < 0))
                 {
                     yield return state.Apply(new MOVE_STACK(datum.Offset - state.A.Value));
                 }

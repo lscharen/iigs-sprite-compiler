@@ -152,10 +152,11 @@
                 }           
             }
 
+            // Set the global state
             var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
             var search = SpriteGeneratorSearchProblem.Create();
 
-            var solution = search.Search(problem, new SpriteGeneratorState(sprite));
+            var solution = search.Search(problem, SpriteGeneratorState.Init(data));
 
             WriteOutSolution(solution);
         }

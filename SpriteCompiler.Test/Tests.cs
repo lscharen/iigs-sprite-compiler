@@ -35,7 +35,7 @@ namespace SpriteCompiler.Test
             var search = SpriteGeneratorSearchProblem.Create();
 
             // Act : solve the problem
-            var solution = search.Search(problem, new SpriteGeneratorState(new byte[] { 0xAA }));
+            var solution = search.Search(problem, SpriteGeneratorState.Init(new byte[] { 0xAA }));
 
             // Assert
             //
@@ -62,7 +62,7 @@ namespace SpriteCompiler.Test
             var search = SpriteGeneratorSearchProblem.Create();
 
             // Act : solve the problem
-            var solution = search.Search(problem, new SpriteGeneratorState(new byte[] { 0xAA, 0x55 }));
+            var solution = search.Search(problem, SpriteGeneratorState.Init(new byte[] { 0xAA, 0x55 }));
 
             // Assert
             //
@@ -87,7 +87,7 @@ namespace SpriteCompiler.Test
             var search = SpriteGeneratorSearchProblem.Create();
 
             // Act : solve the problem
-            var solution = search.Search(problem, new SpriteGeneratorState(new byte[] { 0x11, 0x22, 0x22 }));
+            var solution = search.Search(problem, SpriteGeneratorState.Init(new byte[] { 0x11, 0x22, 0x22 }));
 
             // Assert
             //
@@ -113,7 +113,7 @@ namespace SpriteCompiler.Test
             var search = SpriteGeneratorSearchProblem.Create();
 
             // Act : solve the problem
-            var solution = search.Search(problem, new SpriteGeneratorState(new byte[] { 0xAA, 0x55, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 }));
+            var solution = search.Search(problem, SpriteGeneratorState.Init(new byte[] { 0xAA, 0x55, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 }));
 
             // Assert
             //

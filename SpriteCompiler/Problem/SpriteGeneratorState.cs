@@ -8,6 +8,20 @@
     {
         // Single static reference to the original data set
         public static List<SpriteByte> DATASET = null;
+        public static IDictionary<int, SpriteByte> DATASET_BY_OFFSET = null;
+
+        public static SpriteGeneratorState Init(IEnumerable<SpriteByte> bytes)
+        {
+            DATASET = bytes.ToList();
+            DATASET_BY_OFFSET = DATASET.ToDictionary(x => (int)x.Offset, x => x);
+
+            return new SpriteGeneratorState();
+        }
+
+        public static SpriteGeneratorState Init(IEnumerable<byte> bytes)
+        {
+            return Init(bytes.Select((x, i) => new SpriteByte(x, (ushort)i)));
+        }
 
         public SpriteGeneratorState()
         {

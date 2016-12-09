@@ -28,7 +28,7 @@ namespace SpriteCompiler.Test
             };
 
             // Act : solve the problem
-            var solution = search.Search(problem, new SpriteGeneratorState(sprite));
+            var solution = search.Search(problem, SpriteGeneratorState.Init(sprite));
 
             // Assert : The initial state IS the goal state
             WriteOutSolution(solution);
@@ -53,7 +53,7 @@ namespace SpriteCompiler.Test
             };
 
             // Act : solve the problem
-            var solution = search.Search(problem, new SpriteGeneratorState(sprite));
+            var solution = search.Search(problem, SpriteGeneratorState.Init(sprite));
 
             // Assert : The initial state IS the goal state
             WriteOutSolution(solution);
@@ -84,7 +84,7 @@ namespace SpriteCompiler.Test
             };
 
             // Act : solve the problem
-            var solution = search.Search(problem, new SpriteGeneratorState(sprite));
+            var solution = search.Search(problem, SpriteGeneratorState.Init(sprite));
 
             // Assert : The initial state IS the goal state
             WriteOutSolution(solution);

@@ -22,12 +22,10 @@ namespace SpriteCompiler.Test
             // STA 3,s
             // PHA     = 7 cycles
 
-            var state = new SpriteGeneratorState(new[] { new SpriteByte(0x11, 0), new SpriteByte(0x11, 3)})
-            {
-                A = Register.Constant(0x0011),
-                S = Register.INITIAL_OFFSET,
-                P = SpriteGeneratorState.LONG_I
-            };
+            var state = SpriteGeneratorState.Init(new[] { new SpriteByte(0x11, 0), new SpriteByte(0x11, 3)});
+            state.A = Register.Constant(0x0011);
+            state.S = Register.INITIAL_OFFSET;
+            state.P = SpriteGeneratorState.LONG_I;
 
             var h = heuristic.Eval(state);
 
