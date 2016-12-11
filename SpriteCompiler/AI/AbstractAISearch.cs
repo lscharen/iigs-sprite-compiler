@@ -54,7 +54,7 @@
             return sequence;
         }
 
-        public IEnumerable<T> ExtendSearch(ISearchProblem<A, S, C> problem, IQueue<T> fringe)
+        public IEnumerable<T> ExtendSearch(ISearchProblem<A, S, C> problem)
         {
             while (!fringe.Empty)
             {
@@ -68,7 +68,7 @@
             return Enumerable.Empty<T>();
         }
 
-        public ISearchStepInfo<T> SearchStep(ISearchProblem<A, S, C> problem, IQueue<T> fringe)
+        public ISearchStepInfo<T> SearchStep(ISearchProblem<A, S, C> problem)
         {
             var node = fringe.Remove();
 

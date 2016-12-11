@@ -55,6 +55,7 @@
     <Compile Include="Adapters\QueueAdapter.cs" />
     <Compile Include="AI\AbstractAISearch.cs" />
     <Compile Include="AI\AbstractSearchNode.cs" />
+    <Compile Include="AI\AbstractStateSpaceSearch.cs" />
     <Compile Include="AI\AStarComparer.cs" />
     <Compile Include="AI\AStarSearch.cs" />
     <Compile Include="AI\BestFirstSearch.cs" />
