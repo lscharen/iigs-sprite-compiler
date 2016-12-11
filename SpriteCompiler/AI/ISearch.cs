@@ -20,5 +20,7 @@
          */
         IEnumerable<T> ExtendSearch(ISearchProblem<A, S, C> problem);
 
+        void InitializeSearch(S initialState);
+        ISearchStepInfo<T> SearchStep(ISearchProblem<A, S, C> problem);
     }
 }

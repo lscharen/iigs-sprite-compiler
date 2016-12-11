@@ -41,5 +41,15 @@ namespace SpriteCompiler.AI
         {
             throw new NotImplementedException();
         }
+
+        public void InitializeSearch(S initialState)
+        {
+            search.InitializeSearch(initialState);
+        }
+
+        public ISearchStepInfo<T> SearchStep(ISearchProblem<A, S, C> problem)
+        {
+            return search.SearchStep(problem);
+        }
     }
 }

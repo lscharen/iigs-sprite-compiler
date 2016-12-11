@@ -28,5 +28,15 @@ namespace SpriteCompiler.AI
         {
             return search.ExtendSearch(problem, fringe);
         }
+
+        public void InitializeSearch(S initialState)
+        {
+            search.InitializeSearch(fringe, initialState);
+        }
+
+        public ISearchStepInfo<T> SearchStep(ISearchProblem<A, S, C> problem)
+        {
+            return search.SearchStep(problem, fringe);
+        }
     }
 }

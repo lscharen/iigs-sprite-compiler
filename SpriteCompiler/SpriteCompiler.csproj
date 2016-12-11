@@ -66,6 +66,7 @@
     <Compile Include="AI\IHeuristicFunction.cs" />
     <Compile Include="AI\InformedNodeExpander.cs" />
     <Compile Include="AI\INodeLimiter.cs" />
+    <Compile Include="AI\ISearchStepInfo.cs" />
     <Compile Include="AI\ISuccessorFunction.cs" />
     <Compile Include="AI\IGoalTest.cs" />
     <Compile Include="AI\INodeExpander.cs" />

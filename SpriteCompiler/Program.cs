@@ -49,7 +49,9 @@
             var mask = new List<byte>();
             var filename = (string)null;
             Color? maskColor = null;
+            int? maxCycles = null;
             var sprite = new List<SpriteByte>();
+            bool verbose = false;
 
             var p = new FluentCommandLineParser();
 
@@ -62,6 +64,12 @@
             p.Setup<string>('i', "image")
                 .Callback(_ => filename = _);
 
+            p.Setup<string>('l', "limit")
+                .Callback(_ => maxCycles = int.Parse(_));
+
+            p.Setup<string>('v', "verbose")
+                .Callback(_ => verbose = true);
+
             p.Setup<string>("bg-color")
                 .Callback(_ => maskColor = Color.FromArgb(0xFF, Color.FromArgb(Convert.ToInt32(_, 16))));
             
@@ -72,6 +80,15 @@
             Console.WriteLine("Input filename is " + filename);
             Console.WriteLine("Image mask color is " + (maskColor.HasValue ? maskColor.ToString() : "(none)"));
 
+            // Set the global state
+            var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
+            var search = maxCycles.HasValue ?
+                SpriteGeneratorSearchProblem.Create(maxCycles.Value) :                
+                SpriteGeneratorSearchProblem.Create();
+
+            SpriteGeneratorState initialState = null;
+
+            // Handle the difference command line cases
             if (!String.IsNullOrEmpty(filename))
             {
                 var palette = new Dictionary<Color, int>();
@@ -149,23 +166,38 @@
 
                         sprite.Add(new SpriteByte(data_byte, mask_byte, offset));
                     }
-                }           
-            }
+                }
 
-            // Set the global state
-            var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
-            var search = SpriteGeneratorSearchProblem.Create();
-            
-            if (data.Count == mask.Count)
+                initialState = SpriteGeneratorState.Init(sprite);
+            }
+            else if (data.Count == mask.Count)
             {
-                var solution = search.Search(problem, SpriteGeneratorState.Init(data, mask));
-                WriteOutSolution(solution);
+                initialState = SpriteGeneratorState.Init(data, mask);
             }
             else
             {
-                var solution = search.Search(problem, SpriteGeneratorState.Init(data));
-                WriteOutSolution(solution);
+                initialState = SpriteGeneratorState.Init(data);
             }
+
+            IEnumerable<SpriteGeneratorSearchNode> solution = null;
+            if (verbose)
+            {
+                search.InitializeSearch(initialState);
+                while (true)
+                {
+                    var step = search.SearchStep(problem);
+                    if (step.IsGoal)
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                solution = search.Search(problem, initialState);
+            }
+
+            WriteOutSolution(solution);
         }
     }
 }
