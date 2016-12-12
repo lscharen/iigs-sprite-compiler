@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SpriteCompiler.AI
+﻿namespace SpriteCompiler.AI.Queue
 {
-    public class Lifo<T> : IQueue<T>
+    using System.Collections.Generic;
+
+    public class LIFO<T> : IQueue<T>
     {
         private readonly Stack<T> stack = new Stack<T>();
 

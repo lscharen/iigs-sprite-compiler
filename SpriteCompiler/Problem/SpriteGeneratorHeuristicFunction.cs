@@ -4,7 +4,7 @@
     using System.Linq;
     using System;
 
-    public sealed class SpriteGeneratorHeuristicFunction : IHeuristicFunction<SpriteGeneratorState, IntegerPathCost>
+    public sealed class SpriteGeneratorHeuristicFunction : IHeuristicFunction<SpriteGeneratorState, IntegerCost>
     {
         private static int SpanAndGapCost(int stack, int start, int end, int next)
         {
@@ -39,7 +39,7 @@
             return gapCost + spanCost;
         }
 
-        public IntegerPathCost Eval(SpriteGeneratorState state)
+        public IntegerCost Eval(SpriteGeneratorState state)
         {
             // An admissible heuistic that calculates a cost based on the gaps and runs in a sprite
             //

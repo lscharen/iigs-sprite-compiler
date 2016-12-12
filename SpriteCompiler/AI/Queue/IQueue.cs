@@ -1,8 +1,9 @@
-﻿namespace SpriteCompiler.AI
+﻿namespace SpriteCompiler.AI.Queue
 {
     using System;
     using System.Collections.Generic;
 
+    
     public interface IQueue<T>
     {
         void Clear();

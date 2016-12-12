@@ -179,6 +179,7 @@
                 initialState = SpriteGeneratorState.Init(data);
             }
 
+            /*
             IEnumerable<SpriteGeneratorSearchNode> solution = null;
             if (verbose)
             {
@@ -194,10 +195,11 @@
             }
             else
             {
-                solution = search.Search(problem, initialState);
+                solution = search.Search(problem, fringe, initialState);
             }
 
             WriteOutSolution(solution);
+            */
         }
     }
 }

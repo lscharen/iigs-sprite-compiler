@@ -2,7 +2,7 @@
 {
     using System;
 
-    public interface IHeuristicFunction<S, C> where C : IPathCost<C>
+    public interface IHeuristicFunction<S, C> where C : ICost<C>
     {
         C Eval(S state);
     }

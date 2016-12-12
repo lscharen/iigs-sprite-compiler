@@ -2,9 +2,14 @@
 {
     using System;
 
-    public class HeuristicSearchNode<A, S, T, C> : AbstractSearchNode<A, S, T, C>, ISearchNode<A, S, T, C>
-        where T : HeuristicSearchNode<A, S, T, C>
-        where C : IPathCost<C>, new()
+    public interface IHeuristicSearchNode<A, S, T, C> : ISearchNode<A, S, T, C> where C : ICost<C>
+    {
+        C EstCost { get; }
+    }
+
+    public class HeuristicSearchNode<A, S, T, C> : AbstractSearchNode<A, S, T, C>, IHeuristicSearchNode<A, S, T, C>
+        where T : IHeuristicSearchNode<A, S, T, C>
+        where C : ICost<C>, new()
     {
         public HeuristicSearchNode(T node, S state)
             : base(node, state)
@@ -14,7 +19,7 @@
 
         public C Heuristic { get; set; }
 
-        public override C EstCost
+        public C EstCost
         {
             get
             {

@@ -2,9 +2,9 @@
 {
     using SpriteCompiler.AI;
 
-    public sealed class SpriteGeneratorStepCost : IStepCostFunction<CodeSequence, SpriteGeneratorState, IntegerPathCost>
+    public sealed class SpriteGeneratorStepCost : IStepCostFunction<CodeSequence, SpriteGeneratorState, IntegerCost>
     {
-        public IntegerPathCost StepCost(SpriteGeneratorState fromState, CodeSequence action, SpriteGeneratorState toState)
+        public IntegerCost StepCost(SpriteGeneratorState fromState, CodeSequence action, SpriteGeneratorState toState)
         {
             return action.CycleCount;
         }

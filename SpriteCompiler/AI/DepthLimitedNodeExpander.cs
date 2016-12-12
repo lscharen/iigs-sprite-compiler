@@ -8,7 +8,7 @@ namespace SpriteCompiler.AI
 {
     public class DepthLimitedNodeExpander<A, S, T, C> : NodeExpanderDelegator<A, S, T, C>
         where T : ISearchNode<A, S, T, C>
-        where C : IPathCost<C>, new()
+        where C : ICost<C>, new()
     {
         private readonly INodeLimiter<T, C> limit;
         private bool cutoffOccured = false;

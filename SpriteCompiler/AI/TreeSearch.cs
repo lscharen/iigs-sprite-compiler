@@ -1,11 +1,10 @@
-﻿using System;
-using System.Diagnostics;
-
-namespace SpriteCompiler.AI
+﻿namespace SpriteCompiler.AI
 {
-    public class TreeSearch<A, S, T, C> : AbstractAISearch<A, S, T, C>
+    using Queue;
+
+    public class TreeSearch<A, S, T, C> : AbstractSearchStrategy<A, S, T, C>
         where T : ISearchNode<A, S, T, C>
-        where C : IPathCost<C>
+        where C : ICost<C>
     {
         public TreeSearch(INodeExpander<A, S, T, C> expander)
             : base(expander)
@@ -17,7 +16,7 @@ namespace SpriteCompiler.AI
         /// </summary>
         protected override void AddNodes(IQueue<T> fringe, T node, ISearchProblem<A, S, C> problem)
         {
-            fringe.AddRange(Expand(problem, node));
+            fringe.AddRange(Expander.Expand(problem, node));
         }
     }
 }

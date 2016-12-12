@@ -4,33 +4,33 @@
 
     public sealed class SpriteGeneratorSearchProblem
     {
-        public static ISearchProblem<CodeSequence, SpriteGeneratorState, IntegerPathCost> CreateSearchProblem()
+        public static ISearchProblem<CodeSequence, SpriteGeneratorState, IntegerCost> CreateSearchProblem()
         {
             var goalTest = new SpriteGeneratorGoalTest();
             var stepCost = new SpriteGeneratorStepCost();
             var successors = new SpriteGeneratorSuccessorFunction();
             var heuristic = new SpriteGeneratorHeuristicFunction();
 
-            return new SearchProblem<CodeSequence, SpriteGeneratorState, IntegerPathCost>(goalTest, stepCost, successors, heuristic);
+            return new SearchProblem<CodeSequence, SpriteGeneratorState, IntegerCost>(goalTest, stepCost, successors, heuristic);
         }
 
-        public static ISearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerPathCost> Create()
+        public static ISearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost> Create()
         {
             var expander = new SpriteGeneratorNodeExpander();
-            //var strategy = new TreeSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerPathCost>(expander);
-            var strategy = new GraphSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerPathCost>(expander);
+            var strategy = new TreeSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost>(expander);
+            var queue = new Adapters.QueueAdapter<SpriteGeneratorSearchNode, IntegerCost>();
 
-            return new AStarSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerPathCost>(strategy);
+            return new AStarSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost>(strategy, queue);
         }
 
-        public static ISearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerPathCost> Create(int maxCycles)
+        public static ISearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost> Create(int maxCycles)
         {
             var expander = new SpriteGeneratorNodeExpander();
-            //var strategy = new TreeSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerPathCost>(expander);
-            var strategy = new GraphSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerPathCost>(expander);
+            var strategy = new TreeSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost>(expander);
+            var queue = new Adapters.QueueAdapter<SpriteGeneratorSearchNode, IntegerCost>();
 
-            var maxCost = (IntegerPathCost)maxCycles;
-            return new IterativeDeepeningAStarSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerPathCost>(strategy, maxCost);
+            var maxCost = (IntegerCost)maxCycles;
+            return new IterativeDeepeningAStarSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost>(strategy, maxCost);
         }
     }
 }

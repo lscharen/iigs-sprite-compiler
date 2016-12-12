@@ -2,6 +2,7 @@
 {
     using Priority_Queue;
     using SpriteCompiler.AI;
+    using SpriteCompiler.AI.Queue;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -10,7 +11,7 @@
 
     public class QueueAdapter<T, C> : IQueue<T>
         where T : ISearchNode<C>
-        where C : IComparable<C>
+        where C : ICost<C>
     {
         private readonly SimplePriorityQueue<T, C> queue = new SimplePriorityQueue<T, C>();
 
@@ -20,7 +21,7 @@
         {
             foreach (var item in items)
             {
-#if DEBUG
+#if VERBOSE_DEBUG
                 Console.WriteLine("Enqueuing " + item + " with cost " + item.EstCost);
 #endif
                 queue.Enqueue(item, item.EstCost);

@@ -2,7 +2,7 @@
 {
     using System;
 
-    public interface IStepCostFunction<A, S, C> where C : IPathCost<C>
+    public interface IStepCostFunction<A, S, C> where C : ICost<C>
     {
         C StepCost(S fromState, A action, S toState);
     }

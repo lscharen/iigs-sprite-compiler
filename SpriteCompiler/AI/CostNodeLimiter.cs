@@ -7,18 +7,31 @@
     /// </summary>
     public class CostNodeLimiter<T, C> : INodeLimiter<T, C>
         where T : ISearchNode<C>
-        where C : IPathCost<C>, new()
+        where C : ICost<C>, new()
     {
         private readonly C maxCost;
+        private C nextCost;
 
-        public CostNodeLimiter(C maxCost)
+        public CostNodeLimiter(C maxCost, C infinity)
         {
             this.maxCost = maxCost;
+            this.nextCost = infinity;
         }
+
+        public C NextCost { get { return nextCost; } }
 
         public bool Cutoff(T node)
         {
-            return node.PathCost.CompareTo(maxCost) >= 0;
+            // If we find a value that exceeds the current maximum, return false,
+            // but keep track of the smallest value that is larger than the maximum
+            // cost.
+            if (node.PathCost.CompareTo(maxCost) > 0)
+            {
+                nextCost = (node.PathCost.CompareTo(nextCost) < 0) ? node.PathCost : nextCost;
+                return true;
+            }
+
+            return false;
         }
     }
 }

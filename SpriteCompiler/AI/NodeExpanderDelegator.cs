@@ -4,7 +4,7 @@
 
     public class NodeExpanderDelegator<A, S, T, C> : INodeExpander<A, S, T, C>
         where T : ISearchNode<A, S, T, C>
-        where C : IPathCost<C>
+        where C : ICost<C>
     {
         private readonly INodeExpander<A, S, T, C> expander;
 
@@ -21,6 +21,11 @@
         public virtual T CreateNode(T parent, S state)
         {
             return expander.CreateNode(parent, state);
+        }
+
+        public virtual T CreateNode(S state)
+        {
+            return expander.CreateNode(state);
         }
     }
 }

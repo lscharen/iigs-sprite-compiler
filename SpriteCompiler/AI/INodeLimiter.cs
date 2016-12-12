@@ -2,7 +2,7 @@
 {
     public interface INodeLimiter<T, C>
         where T : ISearchNode<C>
-        where C : IPathCost<C>, new()
+        where C : ICost<C>, new()
     {
         bool Cutoff(T node);
     }

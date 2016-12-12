@@ -53,12 +53,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Adapters\QueueAdapter.cs" />
-    <Compile Include="AI\AbstractAISearch.cs" />
+    <Compile Include="AI\AbstractSearchStrategy.cs" />
     <Compile Include="AI\AbstractSearchNode.cs" />
     <Compile Include="AI\AbstractStateSpaceSearch.cs" />
     <Compile Include="AI\AStarComparer.cs" />
     <Compile Include="AI\AStarSearch.cs" />
     <Compile Include="AI\BestFirstSearch.cs" />
+    <Compile Include="AI\DepthNodeLimiter.cs" />
     <Compile Include="AI\CostNodeLimiter.cs" />
     <Compile Include="AI\DepthFirstSearch.cs" />
     <Compile Include="AI\DepthLimitedNodeExpander.cs" />
@@ -68,23 +69,26 @@
     <Compile Include="AI\InformedNodeExpander.cs" />
     <Compile Include="AI\INodeLimiter.cs" />
     <Compile Include="AI\ISearchStepInfo.cs" />
+    <Compile Include="AI\ISearchStrategy.cs" />
     <Compile Include="AI\ISuccessorFunction.cs" />
     <Compile Include="AI\IGoalTest.cs" />
     <Compile Include="AI\INodeExpander.cs" />
     <Compile Include="AI\IPathCost.cs" />
-    <Compile Include="AI\IQueue.cs" />
+    <Compile Include="AI\Queue\IQueue.cs" />
     <Compile Include="AI\ISearch.cs" />
     <Compile Include="AI\ISearchNode.cs" />
     <Compile Include="AI\ISearchProblem.cs" />
     <Compile Include="AI\IStepCostFunction.cs" />
     <Compile Include="AI\IterativeDeepeningAStarSearch.cs" />
-    <Compile Include="AI\Lifo.cs" />
+    <Compile Include="AI\IterativeDeepeningSearch.cs" />
+    <Compile Include="AI\Queue\FIFO.cs" />
+    <Compile Include="AI\Queue\LIFO.cs" />
     <Compile Include="AI\NodeExpanderDelegator.cs" />
     <Compile Include="AI\SearchProblem.cs" />
     <Compile Include="AI\GraphSearch.cs" />
     <Compile Include="AI\TreeSearch.cs" />
     <Compile Include="Problem\CodeSequence.cs" />
-    <Compile Include="Problem\IntegerPathCost.cs" />
+    <Compile Include="AI\IntegerPathCost.cs" />
     <Compile Include="Problem\Register.cs" />
     <Compile Include="Problem\SpriteByte.cs" />
     <Compile Include="Problem\SpriteGeneratorGoalTest.cs" />

@@ -4,7 +4,7 @@
     using System.Collections.Generic;
 
     public interface ISearchProblem<A, S, C>
-        where C : IComparable<C>
+        where C : ICost<C>
     {
         IEnumerable<Tuple<A, S>> Successors(S state);
         bool IsGoal(S state);

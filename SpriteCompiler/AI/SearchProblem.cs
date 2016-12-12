@@ -7,12 +7,17 @@ using System.Threading.Tasks;
 namespace SpriteCompiler.AI
 {
     public class SearchProblem<A, S, C> : ISearchProblem<A, S, C>
-        where C : IPathCost<C>
+        where C : ICost<C>, new()
     {
         private readonly IGoalTest<S> goalTest;
         private readonly IStepCostFunction<A, S, C> stepCost;
         private readonly ISuccessorFunction<A, S> successorFn;
         private readonly IHeuristicFunction<S, C> heuristicFn;
+
+        public SearchProblem(IGoalTest<S> goalTest, IStepCostFunction<A, S, C> stepCost, ISuccessorFunction<A, S> successor)
+            : this(goalTest, stepCost, successor, null)
+        {
+        }
 
         public SearchProblem(IGoalTest<S> goalTest, IStepCostFunction<A, S, C> stepCost, ISuccessorFunction<A, S> successor, IHeuristicFunction<S, C> heuristicFn)
         {
@@ -39,6 +44,11 @@ namespace SpriteCompiler.AI
 
         public C Heuristic(S state)
         {
+            if (heuristicFn == null)
+            {
+                return new C();
+            }
+
             return heuristicFn.Eval(state);
         }
     }

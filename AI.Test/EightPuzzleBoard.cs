@@ -6,17 +6,47 @@ using System.Threading.Tasks;
 
 namespace AI.Test
 {
+    public static class DirectionExtensions
+    {
+        public static bool CanMove(this Direction direction, int p)
+        {
+            switch (direction)
+            {
+                case Direction.LEFT: return (p % 3) != 0;
+                case Direction.RIGHT: return (p % 3) != 2;
+                case Direction.UP: return (p > 2);
+                case Direction.DOWN: return (p < 6);
+            }
+
+            throw new ArgumentException();
+        }
+
+        public static int MoveFrom(this Direction direction, int p)
+        {
+            switch (direction)
+            {
+                case Direction.LEFT: return p - 1;
+                case Direction.RIGHT: return p + 1;
+                case Direction.UP: return p - 3;
+                case Direction.DOWN: return p + 3;
+            }
+
+            throw new ArgumentException();
+        }
+    }
+
+    public enum Direction
+    {
+        LEFT,
+        RIGHT,
+        UP,
+        DOWN
+    }
+
     public class EightPuzzleBoard
     {
         protected static Random rng = new Random();
 
-        public enum Direction
-        {
-            LEFT,
-            RIGHT,
-            UP,
-            DOWN
-        }
 
         private int[] board;
 
@@ -35,6 +65,8 @@ namespace AI.Test
             this.board = (int[])aBoard.board.Clone();
         }
 
+        public int[] Board { get { return board; } }
+
         public EightPuzzleBoard Scramble()
         {
             return Scramble(10);
@@ -45,12 +77,13 @@ namespace AI.Test
             var newPuzzle = new EightPuzzleBoard(this);
             var direction = Enum.GetValues(typeof(Direction)).Cast<Direction>().ToList();
 
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i < n;)
             {
                 int j = rng.Next(direction.Count);
                 if (newPuzzle.CanMoveGap(direction[j]))
                 {
                     newPuzzle.MoveGap(direction[j]);
+                    i += 1;
                 }
             }
 
@@ -113,8 +146,51 @@ namespace AI.Test
             return retVal;
         }
 
-        public int[] Board { get { return board; } }
+        public int[] GetLocationOf(int val)
+        {
+            return ind2sub(GetPositionOf(val)); 
+        }
 
+        public EightPuzzleBoard MoveGap(Direction direction)
+        {
+            var pos1 = GapPosition;
+            if (direction.CanMove(pos1))
+            {
+                var pos2 = direction.MoveFrom(pos1);
+                Swap(pos1, pos2);
+            }
 
+            return this;
+        }
+
+        private void Swap(int pos1, int pos2)
+        {
+            var val = this[pos1];
+            this[pos1] = this[pos2];
+            this[pos2] = val;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return (this == obj) || board.SequenceEqual(((EightPuzzleBoard)obj).board);
+        }
+
+        public override int GetHashCode()
+        {
+            return board.GetHashCode();
+        }
+
+        public bool CanMoveGap(Direction where)
+        {
+            return where.CanMove(GetPositionOf(0));
+        }
+
+        public override string ToString()
+        {
+            return
+                board[0] + " " + board[1] + " " + board[2] + Environment.NewLine +
+                board[3] + " " + board[4] + " " + board[5] + Environment.NewLine +
+                board[6] + " " + board[7] + " " + board[8];
+        }
     }
 }

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace SpriteCompiler.AI
+﻿namespace SpriteCompiler.AI
 {
-    public class GraphSearch<A, S, T, C> : AbstractAISearch<A, S, T, C>
+    using System.Collections.Generic;
+    using Queue;
+
+    public class GraphSearch<A, S, T, C> : AbstractSearchStrategy<A, S, T, C>
         where T : ISearchNode<A, S, T, C>
-        where C : IPathCost<C>
+        where C : ICost<C>
     {
         private readonly ISet<S> closed = new HashSet<S>();
 
@@ -31,7 +31,7 @@ namespace SpriteCompiler.AI
             if (!closed.Contains(node.State))
             {
                 closed.Add(node.State);
-                fringe.AddRange(Expand(problem, node));
+                fringe.AddRange(Expander.Expand(problem, node));
             }
         }
     }

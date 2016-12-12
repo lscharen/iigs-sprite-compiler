@@ -11,9 +11,11 @@
     /// </summary>
     public interface INodeExpander<A, S, T, C>
         where T : ISearchNode<A, S, T, C>
-        where C : IPathCost<C>
+        where C : ICost<C>
     {
         IEnumerable<T> Expand(ISearchProblem<A, S, C> problem, T node);
+
         T CreateNode(T parent, S state);
+        T CreateNode(S state);
     }
 }

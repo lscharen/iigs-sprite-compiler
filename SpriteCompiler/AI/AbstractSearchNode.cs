@@ -5,7 +5,7 @@
 
     public abstract class AbstractSearchNode<A, S, T, C> : ISearchNode<A, S, T, C>
         where T : ISearchNode<A, S, T, C>
-        where C : IPathCost<C>, new()
+        where C : ICost<C>, new()
     {
         protected readonly S state;
         protected readonly T parent;
@@ -30,6 +30,8 @@
         public int Depth { get { return depth; } }
         public S State { get { return state; } }
 
+        public C EstCost { get { return PathCost; } }
+
         public C StepCost
         {
             get
@@ -43,7 +45,5 @@
                 pathCost = HasParent ? parent.PathCost.Add(value) : value;
             }
         }
-
-        virtual public C EstCost { get { return PathCost; } }
     }
 }

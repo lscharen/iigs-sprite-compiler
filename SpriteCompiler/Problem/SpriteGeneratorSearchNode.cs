@@ -2,7 +2,7 @@
 {
     using SpriteCompiler.AI;
 
-    public sealed class SpriteGeneratorSearchNode : HeuristicSearchNode<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerPathCost>
+    public sealed class SpriteGeneratorSearchNode : HeuristicSearchNode<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost>
     {
         public SpriteGeneratorSearchNode(SpriteGeneratorSearchNode node, SpriteGeneratorState state)
             : base(node, state)
