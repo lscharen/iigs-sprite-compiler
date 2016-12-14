@@ -72,6 +72,30 @@ namespace SpriteCompiler.Problem
         }
     }
 
+    public sealed class TSC : CodeSequence
+    {
+        public TSC() : base(2) { }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.A = _.S;
+            });
+        }
+
+        public override string ToString()
+        {
+            return "TSC";
+        }
+
+        public override string Emit()
+        {
+            return FormatLine("", "TSC", "", "2 cycles");
+        }
+    }
+
+
     public sealed class SHORT_M : CodeSequence
     {
         public SHORT_M() : base(3) { }
@@ -109,6 +133,31 @@ namespace SpriteCompiler.Problem
         public override string Emit()
         {
             return FormatLine("", "REP", "#$10", "3 cycles");
+        }
+    }
+
+    public sealed class STACK_REL_8_BIT_STORE : CodeSequence
+    {
+        private readonly byte offset;
+
+        public STACK_REL_8_BIT_STORE(byte offset) : base(4) { this.offset = offset; }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.RemoveByte((ushort)(offset + _.S.Value));
+            });
+        }
+
+        public override string ToString()
+        {
+            return "STA " + offset.ToString("X2") + ",s";
+        }
+
+        public override string Emit()
+        {
+            return FormatLine("", "STA", offset.ToString("X2") + ",s", "4 cycles");
         }
     }
 
@@ -177,10 +226,9 @@ namespace SpriteCompiler.Problem
 
     public sealed class STACK_REL_16_BIT_STORE : CodeSequence
     {
-        private readonly ushort value;
         private readonly byte offset;
 
-        public STACK_REL_16_BIT_STORE(ushort value, byte offset) : base(5) { this.value = value; this.offset = offset; }
+        public STACK_REL_16_BIT_STORE(byte offset) : base(5) { this.offset = offset; }
 
         public override SpriteGeneratorState Apply(SpriteGeneratorState state)
         {
@@ -294,6 +342,37 @@ namespace SpriteCompiler.Problem
         }
     }
 
+    public sealed class LOAD_8_BIT_IMMEDIATE_AND_PUSH : CodeSequence
+    {
+        private readonly byte value;
+
+        public LOAD_8_BIT_IMMEDIATE_AND_PUSH(byte value) : base(5) { this.value = value; }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.A = _.A.LoadConstant(value);      // Need to be able to track high / low bytes independently...
+                _.RemoveByte((ushort)(_.S.Value));
+                _.S = _.S.Add(-1);
+            });
+        }
+
+        public override string ToString()
+        {
+            return "LDA #$" + value.ToString("X2") + " / PHA";
+        }
+
+        public override string Emit()
+        {
+            return String.Join("\n",
+                FormatLine("", "LDA", "#$" + value.ToString("X2"), "2 cycles"),
+                FormatLine("", "PHA", "", "3 cycles")
+            );
+        }
+    }
+
+
     public sealed class PEA : CodeSequence
     {
         private readonly ushort value;
@@ -320,9 +399,9 @@ namespace SpriteCompiler.Problem
         }
     }
 
-    public sealed class PHA : CodeSequence
+    public sealed class PHA_16 : CodeSequence
     {
-        public PHA() : base(4) { }
+        public PHA_16() : base(4) { }
 
         public override SpriteGeneratorState Apply(SpriteGeneratorState state)
         {
@@ -343,4 +422,29 @@ namespace SpriteCompiler.Problem
             return FormatLine("", "PHA", "", "4 cycles");
         }
     }
+
+    public sealed class PHA_8 : CodeSequence
+    {
+        public PHA_8() : base(3) { }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.RemoveByte((ushort)(_.S.Value));
+                _.S = _.S.Add(-1);
+            });
+        }
+
+        public override string ToString()
+        {
+            return "PHA";
+        }
+
+        public override string Emit()
+        {
+            return FormatLine("", "PHA", "", "3 cycles");
+        }
+    }
+
 }

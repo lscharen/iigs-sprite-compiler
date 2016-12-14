@@ -179,27 +179,9 @@
                 initialState = SpriteGeneratorState.Init(data);
             }
 
-            /*
-            IEnumerable<SpriteGeneratorSearchNode> solution = null;
-            if (verbose)
-            {
-                search.InitializeSearch(initialState);
-                while (true)
-                {
-                    var step = search.SearchStep(problem);
-                    if (step.IsGoal)
-                    {
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                solution = search.Search(problem, fringe, initialState);
-            }
+            var solution = search.Search(problem, initialState);
 
             WriteOutSolution(solution);
-            */
         }
     }
 }

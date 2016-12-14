@@ -117,7 +117,7 @@
                     {
                         if (state.A.IsLiteral && state.A.Value == topWord.Value.Data)
                         {
-                            yield return state.Apply(new PHA());
+                            yield return state.Apply(new PHA_16());
                         }
                         else
                         {
@@ -140,7 +140,14 @@
                 {
                     if (!state.LongA)
                     {
-                        yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(topByte.Value.Data, 0));
+                        if (state.A.IsLiteral && ((state.A.Value & 0xFF) == topByte.Value.Data))
+                        {
+                            yield return state.Apply(new PHA_8());
+                        }
+                        else
+                        {
+                            yield return state.Apply(new LOAD_8_BIT_IMMEDIATE_AND_PUSH(topByte.Value.Data));
+                        }
                     }
                 }
             }
@@ -152,7 +159,7 @@
             // 2. Set the stack to the start of a contiguous segment
             // 3. Set the stack to the end of a contiguous segment
 
-            // move to the first or last byte of each span.  So , take the first byte and then look for any
+            // move to the first or last byte of each span.  So, take the first byte and then look for any
             if (state.A.IsScreenOffset && !state.S.IsScreenOffset && state.LongA)
             {
                 // If any of the open bytes are within 255 bytes of the accumulator, consider just 
@@ -211,7 +218,7 @@
                         {
                             if (data == state.A.Value)
                             {
-                                yield return state.Apply(new STACK_REL_16_BIT_STORE(data, offset));
+                                yield return state.Apply(new STACK_REL_16_BIT_STORE(offset));
                             }
                             else
                             {
@@ -239,14 +246,25 @@
                     // We can LDA #$XX / STA X,s for any values within 256 bytes of the current address
                     foreach (var datum in open.Where(WithinRangeOf(addr, 256)))
                     {
-                        var offset = datum.Offset - addr;
+                        var offset = (byte)(datum.Offset - addr);
+
+                        // Easy case when mask is empty
                         if (datum.Mask == 0x00)
                         {
-                            yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, (byte)offset));
+                            if (datum.Data == (state.A.Value & 0xFF))
+                            {
+                                yield return state.Apply(new STACK_REL_8_BIT_STORE(offset));
+                            }
+                            else
+                            {
+                                yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, offset));
+                            }
                         }
+
+                        // Otherwise there is really only one choice LDA / AND / ORA / STA sequence
                         else
                         {
-                            yield return state.Apply(new STACK_REL_8_BIT_READ_MODIFY_WRITE(datum.Data, datum.Mask, (byte)offset));
+                            yield return state.Apply(new STACK_REL_8_BIT_READ_MODIFY_WRITE(datum.Data, datum.Mask, offset));
                         }
                     }
                 }
@@ -254,12 +272,21 @@
 
             // If the accumulator and stack are both initialized, only propose moves to locations
             // before and after the current 256 byte stack-relative window
-            if (state.A.IsScreenOffset && state.S.IsScreenOffset && state.LongA)
+            if (state.S.IsScreenOffset && state.LongA)
             {
-                var addr = state.S.Value;
-                foreach (var datum in open.Where(x => (x.Offset - addr) > 255 || (x.Offset - addr) < 0))
+                // If the accumulator already has a screen offset value, just calculate it
+                if (state.A.IsScreenOffset)
                 {
-                    yield return state.Apply(new MOVE_STACK(datum.Offset - state.A.Value));
+                    var addr = state.S.Value;
+                    foreach (var datum in open.Where(x => (x.Offset - addr) > 255 || (x.Offset - addr) < 0))
+                    {
+                        yield return state.Apply(new MOVE_STACK(datum.Offset - state.A.Value));
+                    }
+                }
+                // Otherwise, put the stack in the accumulator
+                else
+                {
+                    yield return state.Apply(new TSC());
                 }
             }
         }

@@ -32,9 +32,10 @@ namespace SpriteCompiler.AI
                 next.StepCost = problem.StepCost(node.State, action, state);
                 next.Heuristic = problem.Heuristic(state);
 
-#if False
-                Console.WriteLine("   Action = " + next.Action + ", g(n') = " + next.PathCost + ", h(n') = " + next.Heuristic);
-#endif
+                #if VERBOSE_DEBUG
+                System.Diagnostics.Trace.WriteLine("   Action = " + next.Action + ", g(n') = " + next.PathCost + ", h(n') = " + next.Heuristic);
+                #endif
+
                 yield return next;
             }
         }

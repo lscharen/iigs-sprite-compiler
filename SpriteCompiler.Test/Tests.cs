@@ -219,11 +219,66 @@ namespace SpriteCompiler.Test
             Assert.AreEqual(31, (int)solution.Last().PathCost);
         }
 
+        [TestMethod]
+        public void TestThreeLineSprite()
+        {
+            // Arrange
+            var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
+            var search = SpriteGeneratorSearchProblem.Create();
+
+            // Act : solve the problem
+            var data = new[]
+            {
+                new SpriteByte(0x11, 0),
+                new SpriteByte(0x11, 160),
+                new SpriteByte(0x11, 320)
+            };
+
+            var solution = search.Search(problem, SpriteGeneratorState.Init(data));
+
+            // Current best solution
+            //
+            //	TCS		; 2 cycles
+            //	SEP	#$10	; 3 cycles
+            //	LDA	#$11	; 2 cycles
+            //	PHA	        ; 3 cycles
+            //	STA	A1,s	; 4 cycles
+            //	REP	#$10	; 3 cycles
+            //	TSC		    ; 2 cycles
+            //	ADC	#321	; 3 cycles
+            //	TCS		    ; 2 cycles
+            //	SEP	#$10	; 3 cycles
+            //	LDA	#$11	; 2 cycles
+            //	PHA      	; 3 cycles
+            //	REP	#$10	; 3 cycles
+            //; Total Cost = 35 cycles
+            //
+            // Once other register caching becomes available, this should be able to be improved to
+            //
+            //	TCS		    ; 2 cycles
+            //	SEP	#$20	; 3 cycles
+            //	LDX	#$11	; 2 cycles
+            //	PHX	        ; 3 cycles
+            //  ADC #160    ; 3 cycles
+            //  TCS         ; 2 cycles
+            //  PHX         ; 3 cycles
+            //  ADC #161    ; 3 cycles
+            //  TCS         ; 2 cycles
+            //  PHX         ; 3 cycles
+            //  REP #$20    ; 3 cycles
+            //; Total Cost = 29 cycles
+
+            // Write out the solution
+            WriteOutSolution(solution);
+
+            Assert.AreEqual(35, (int)solution.Last().PathCost);
+        }
+
         private void WriteOutSolution(IEnumerable<SpriteGeneratorSearchNode> solution)
         {
             foreach (var step in solution.Skip(1))
             {
-                Trace.WriteLine(step.Action.ToString());
+                Trace.WriteLine(step.Action.Emit());
             }
 
             Trace.WriteLine(string.Format("; Total Cost = {0} cycles", (int)solution.Last().PathCost));

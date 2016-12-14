@@ -44,8 +44,8 @@
         public IEnumerable<T> Solution(T node)
         {
             var sequence = new List<T>();
-            
-            for (var curr = node; node != null; node = node.Parent)
+
+            for (var curr = node; curr != null; curr = curr.Parent)
             {
                 sequence.Add(curr);
             }
