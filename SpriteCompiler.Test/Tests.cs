@@ -44,14 +44,14 @@ namespace SpriteCompiler.Test
             // TCS          
             // SHORT A
             // LDA #$AA
-            // STA 0,s
-            // LONG A     = 14 cycles
+            // PHA
+            // LONG A     = 13 cycles
 
             // Write out the solution
             WriteOutSolution(solution);
 
             Assert.AreEqual(5, solution.Count());
-            Assert.AreEqual(14, (int)solution.Last().PathCost);
+            Assert.AreEqual(13, (int)solution.Last().PathCost);
         }
 
         [TestMethod]

@@ -64,7 +64,7 @@ namespace SpriteCompiler.Test
         {
             // Arrange
             var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
-            var search = SpriteGeneratorSearchProblem.Create(80); // max budget of 80 cycles
+            var search = SpriteGeneratorSearchProblem.Create(); // max budget of 80 cycles
             var sprite = new List<SpriteByte>
             {
                 new SpriteByte(0x11, 0x00, 3),
