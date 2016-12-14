@@ -96,9 +96,21 @@ A simple sprite three lines tall.
 
 ## Limitations ##
 
-The search is quite memory intensive and grows too fast to handle multi-line sprite data yet.  Future versions will
-incorporate more aggressive heuristic and Iterative Deepening A-Star search to mitigate the memory usage.
+ * The search is quite memory intensive and grows too fast to handle multi-line sprite data yet.  Future versions will incorporate more aggressive heuristic and Iterative Deepening A-Star search to mitigate the memory usage.
 
+ * Carry Bit Tracking.  If the stack is moved backwards, the code does not track that the carry is now set, so the next ADC instruction will be off by one.  Proper carry bit tracking should remove the need for any CLC/SEC instructions.
+ 
+ * High/Low Register States. The state of a register (A/X/Y/S/D) is itentified to be in one of three states: IMMEDIATE, SCREEN_OFFSET, UNINITIALIZED.  There are cases where high and low bytes of a register can be in a different state and the compiler does not track this scenario. Ex. 
+ ```
+	TCS             ; A = SCREEN_OFFSET
+	SEP     #$10    ; Endable 8-bit accumulator
+	LDA     #$11    ; Low Byte = IMMEDIATE / High Byte = SCREEN_OFFSET
+```
+Currently, the accumulator will be marked as having an IMMEDIATE value of $0011, rather than the intederminant value of $--11.  If there are 16-bit data values equal to $0011, then the compiler could emit incorrect code.
+
+* Heuristic is too ooptimistic.  The Heuristic function does not take into account the cost of masked data stores, stack movement, or switrched between 8-bit and 16-bit modes.  As such, it is too optimistic in many cases and causes the effectrive branching factor of the search to become too large.
+
+* Successor function allows non-productive moves.  Specifically, it allows a switch to/from 8/16-bit mode at any point, e.g. SEP/REP instructions.  As such, the expander will propose long sequences of SEP/REP/SEP/REP/SEP/REP/...  Since each instruction is cheaper than any code that actually writes data, many states are expanded that a trivially redundent until their cumulative cost is greater that a store.  This can actually be quite high for 16-bit masked stores (16 cycles), which is 5 SEP/REP expansions.
 ## License
 
 MIT License
