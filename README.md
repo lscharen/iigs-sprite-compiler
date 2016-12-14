@@ -108,7 +108,7 @@ A simple sprite three lines tall.
 ```
 Currently, the accumulator will be marked as having an IMMEDIATE value of $0011, rather than the intederminant value of $--11.  If there are 16-bit data values equal to $0011, then the compiler could emit incorrect code.
 
-* Heuristic is too ooptimistic.  The Heuristic function does not take into account the cost of masked data stores, stack movement, or switrched between 8-bit and 16-bit modes.  As such, it is too optimistic in many cases and causes the effectrive branching factor of the search to become too large.
+* Heuristic is too ooptimistic.  The Heuristic function does not take into account the cost of masked data stores, stack movement, or switrched between 8-bit and 16-bit modes.  As such, it is too optimistic in many cases and causes the effectrive branching factor of the search to become too large. For example, one test case has a true cost of 37 cycles, but the heuristic estimated a total cost of 19 cycles from the initial state.
 
 * Successor function allows non-productive moves.  Specifically, it allows a switch to/from 8/16-bit mode at any point, e.g. SEP/REP instructions.  As such, the expander will propose long sequences of SEP/REP/SEP/REP/SEP/REP/...  Since each instruction is cheaper than any code that actually writes data, many states are expanded that a trivially redundent until their cumulative cost is greater that a store.  This can actually be quite high for 16-bit masked stores (16 cycles), which is 5 SEP/REP expansions.
 ## License
