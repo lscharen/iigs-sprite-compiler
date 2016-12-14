@@ -72,6 +72,28 @@ Currently, the compiler can only handle short, unmasked sequences, but it does c
 	PHA         ; 4 cycles
 ; Total Cost = 24 cycles
 ```
+### Data = ($11, 0), ($11, 160), ($11, 320) ###
+
+A simple sprite three lines tall.
+
+```
+	TCS             ; 2 cycles
+	SEP     #$10    ; 3 cycles
+	LDA     #$11    ; 2 cycles
+	PHA             ; 3 cycles
+	STA     A1,s    ; 4 cycles
+	REP     #$10    ; 3 cycles
+	TSC             ; 2 cycles
+	ADC     #321    ; 3 cycles
+	TCS             ; 2 cycles
+	SEP     #$10    ; 3 cycles
+	LDA     #$11    ; 2 cycles
+	PHA             ; 3 cycles
+	REP     #$10    ; 3 cycles
+; Total Cost = 35 cycles
+
+```
+
 ## Limitations ##
 
 The search is quite memory intensive and grows too fast to handle multi-line sprite data yet.  Future versions will
