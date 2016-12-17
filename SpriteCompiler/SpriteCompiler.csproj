@@ -68,6 +68,7 @@
     <Compile Include="AI\IHeuristicFunction.cs" />
     <Compile Include="AI\InformedNodeExpander.cs" />
     <Compile Include="AI\INodeLimiter.cs" />
+    <Compile Include="AI\InstrumentedNodeExpander.cs" />
     <Compile Include="AI\ISearchStepInfo.cs" />
     <Compile Include="AI\ISearchStrategy.cs" />
     <Compile Include="AI\ISuccessorFunction.cs" />
@@ -87,6 +88,7 @@
     <Compile Include="AI\SearchProblem.cs" />
     <Compile Include="AI\GraphSearch.cs" />
     <Compile Include="AI\TreeSearch.cs" />
+    <Compile Include="Helpers\EnumerableExtensions.cs" />
     <Compile Include="Problem\CodeSequence.cs" />
     <Compile Include="AI\IntegerPathCost.cs" />
     <Compile Include="Problem\Register.cs" />

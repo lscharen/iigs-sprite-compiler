@@ -1,6 +1,7 @@
 ﻿namespace SpriteCompiler.Problem
 {
     using SpriteCompiler.AI;
+    using SpriteCompiler.Helpers;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -77,168 +78,120 @@
     {
         public IEnumerable<Tuple<CodeSequence, SpriteGeneratorState>> Successors(SpriteGeneratorState state)
         {
-            // This is the work-horse of the compiler.  For a given state we need to enumerate all of the
-            // potential next operations.
-            //
-            // 1. If there are 16-bits of data at then current offset, we can
-            //    a. Use one of the cached valued in A/X/Y/D if they match (4 cycles)
-            //    b. Use a PEA to push immediate values (5 cycles)
-            //    c. Load a value into A/X/Y and then push (7 cycles, only feasible if the value appears elsewhere in the sprite)
-            //    d. Load the value into D and then push (9 cycles, and leaves A = D)
-            //
-            // 2. Move the stack
-            //    a. Add a value directly (7 cycles, A = unknown)
-            //    b. Skip 1 byte (6 cycles, A = unknown TSC/DEC/TSC)
-            //    c. Multiple skips (LDA X,s/AND/ORA/STA = 16/byte,  ADC #/TCS/LDX #/PHX = 10/byte
-            //
-            // 3. Single-byte at the end of a solid run
-            //    a. If no registers are 8-bit, LDA #Imm/STA 0,s (8 cycles, sets Acc)
-            //    b. If any reg is already 8-bit, LDA #imm/PHA (6 cycles)
-            //
-            // We always try to return actions that write data since that moves us toward the goal state
-            
-            // Get the list of remaining bytes by removing the closed list from the global sprite
-            var open = SpriteGeneratorState.DATASET.Where(x => !state.Closed.Contains(x.Offset)).ToList();
-            var bytes = open.ToDictionary(x => x.Offset, x => x);
+            // Get the list of remaining bytes by removing the closed list from the global sprite dataset
+            var open = state.RemainingBytes();
 
+            // If the open list is empty, there can be only one reaons -- we're in an 8-bit
+            // mode.
+            if (!open.Any())
+            {
+                yield return state.Apply(new LONG_M());
+                yield break;
+            }
+
+            // Get the first byte -- if we are expanding a state we can safely assume there
+            // is still data to expand.
+            var firstByte = open.First();
+
+            // Identify the first run of solid bytes
+            var firstSolid = FirstSolidRun(open);
+
+            // In an initial state, the stack has not been set, but the accumulator contains a screen
+            // offset address.  There are three possible options
+            //
+            // 1. Set the stack to the accumulator value.  This is optimal when there are very few
+            //    data bytes to set and the overhead of moving the stack negates any benefit from
+            //    using stack push instructions
+            //
+            // 2. Set the stack to the first offset of the open set. This can be optimal if there are a few
+            //    bytes and moving the stack forward a bit can allow the code to reach them without needing
+            //    a second stack adjustment.
+            //
+            // 3. Set the stack to the first, right-most offset that end a sequence of solid bytes
+            if (!state.S.IsScreenOffset && state.A.IsScreenOffset)
+            {
+                // If the first byte is within 255 bytes of the accumulator, propose setting
+                // the stack to the accumulator value
+                var delta = firstByte.Offset - state.A.Value;
+                if (delta >= 0 && delta < 256)
+                {
+                    yield return state.Apply(new MOVE_STACK(0));
+                }
+
+                // If the first byte offset is not equal to the accumulator value, propose that
+                if (delta > 0)
+                {
+                    yield return state.Apply(new MOVE_STACK(delta));
+                }
+
+                // Find the first edge of a solid run....TODO
+                if (firstSolid != null && firstSolid.Count >= 2)
+                {
+                    yield return state.Apply(new MOVE_STACK(firstSolid.Last.Offset - state.A.Value));
+                }
+
+                yield break;
+            }
+
+            // If the first byte is 256 bytes or more ahead of the current stack location,
+            // then we need to advance
+            var firstByteDistance = firstByte.Offset - state.S.Value;
+            if (state.S.IsScreenOffset && firstByteDistance >= 256)
+            {
+                // Go to the next byte, or the first solid edge
+                yield return state.Apply(new MOVE_STACK(firstByteDistance));
+
+                yield break;
+            }
+            
+            var bytes = open.ToDictionary(x => x.Offset, x => x);
+           
             // Get the current byte and current word that exist at the current stack location
             var topByte = state.TryGetStackByte(bytes);
             var topWord = state.TryGetStackWord(bytes);
-            var nextWord = state.TryGetStackWord(bytes, -2); // Also get the next value below the current word
 
-            // If there is some data at the top of the stack, see what we can do
-            if (topWord.HasValue)
+            // If the top of the stack is a solid work, we can always emit a PEA regardless of 8/16-bit mode
+            if (topWord.HasValue && topWord.Value.Mask == 0x000)
             {
-                // First, the simple case -- the data has no mask
-                if (topWord.Value.Mask == 0x000)
-                {
-                    // If any of the registers has the exact value we need, then it is always fastest to just push the value
-                    if (state.LongA)
-                    {
-                        if (state.A.IsLiteral && state.A.Value == topWord.Value.Data)
-                        {
-                            yield return state.Apply(new PHA_16());
-                        }
-                        else
-                        {
-                            yield return state.Apply(new PEA(topWord.Value.Data));
-                            yield return state.Apply(new LOAD_16_BIT_IMMEDIATE_AND_PUSH(topWord.Value.Data));
-                        }
-                    }
-                    // Otherwise, the only alternative is a PEA instruction
-                    else
-                    {
-                        yield return state.Apply(new PEA(topWord.Value.Data));
-                    }
-                }
+                yield return state.Apply(new PEA(topWord.Value.Data));
             }
 
-            // If there is a valid byte, then we can look for an 8-bit push, or an immediate mode LDA #XX/STA 0,s
-            if (topByte.HasValue)
+            // First set of operations for when the accumulator is in 8-bit mode.  We are basically limited
+            // to either
+            //
+            // 1. Switching to 16-bit mode
+            // 3. Using a PHA to push an 8-bit solid or masked value on the stack
+            // 4. Using a STA 0,s to store an 8-bit solid or masked value on the stack
+
+            if (!state.LongA)
             {
-                if (topByte.Value.Mask == 0x00)
+                // The byte to be stored at the top of the stack has some special methods available
+                if (topByte.HasValue)
                 {
-                    if (!state.LongA)
+                    var datum = topByte.Value;
+
+                    // Solid byte
+                    if (datum.Mask == 0x00)
                     {
-                        if (state.A.IsLiteral && ((state.A.Value & 0xFF) == topByte.Value.Data))
+                        if (state.A.IsLiteral && ((state.A.Value & 0xFF) == datum.Data))
                         {
                             yield return state.Apply(new PHA_8());
                         }
                         else
                         {
-                            yield return state.Apply(new LOAD_8_BIT_IMMEDIATE_AND_PUSH(topByte.Value.Data));
+                            yield return state.Apply(new LOAD_8_BIT_IMMEDIATE_AND_PUSH(datum.Data));
+                            yield return state.Apply(new STACK_REL_8_BIT_IMMEDIATE_STORE(datum.Data, 0));
                         }
                     }
-                }
-            }
 
-            // If the accumulator holds an offset then we could move to any byte position, but it is only beneficial to
-            // either
-            //
-            // 1. Set the stack to the current accumulator value
-            // 2. Set the stack to the start of a contiguous segment
-            // 3. Set the stack to the end of a contiguous segment
-
-            // move to the first or last byte of each span.  So, take the first byte and then look for any
-            if (state.A.IsScreenOffset && !state.S.IsScreenOffset && state.LongA)
-            {
-                // If any of the open bytes are within 255 bytes of the accumulator, consider just 
-                // setting the stack to the accumulator value
-                if (open.Any(x => (x.Offset - state.A.Value) >= 0 && (x.Offset - state.A.Value) < 256))
-                {
-                    yield return state.Apply(new MOVE_STACK(0));
-                }
-
-                for (var i = 0; i < open.Count; i++)
-                {
-                    if (i == 0)
+                    // Masked byte
+                    else
                     {
-                        yield return state.Apply(new MOVE_STACK(open[i].Offset - state.A.Value));
-                        continue;
-                    }
-
-                    if (i == open.Count - 1)
-                    {
-                        yield return state.Apply(new MOVE_STACK(open[i].Offset - state.A.Value));
-                        continue;
-                    }
-
-                    if ((open[i].Offset - open[i - 1].Offset) > 1)
-                    {
-                        yield return state.Apply(new MOVE_STACK(open[i].Offset - state.A.Value));
+                        yield return state.Apply(new STACK_REL_8_BIT_READ_MODIFY_PUSH(datum.Data, datum.Mask));
                     }
                 }
-            }
 
-            // It is always permissible to move to/from 16 bit mode
-            if (state.LongA)
-            {
-                yield return state.Apply(new SHORT_M());
-
-                // Add any possible 16-bit data manipulations
-                if (state.S.IsScreenOffset)
-                {
-                    var addr = state.S.Value;
-
-                    // Look for consecutive bytes. The second byte can come from the DATASET
-                    var local = open.Where(WithinRangeOf(addr, 256)).ToList();
-                    var words = local
-                        .Where(x => SpriteGeneratorState.DATASET_BY_OFFSET.ContainsKey(x.Offset + 1))
-                        .Select(x => new { Low = x, High = SpriteGeneratorState.DATASET_BY_OFFSET[x.Offset + 1] })
-                        .ToList();
-
-                    foreach (var word in words)
-                    {
-                        var offset = (byte)(word.Low.Offset - addr);
-                        var data = (ushort)(word.Low.Data + (word.High.Data << 8));
-                        var mask = (ushort)(word.Low.Mask + (word.High.Mask << 8));
-
-                        // Easy case when mask is empty
-                        if (mask == 0x0000)
-                        {
-                            if (data == state.A.Value)
-                            {
-                                yield return state.Apply(new STACK_REL_16_BIT_STORE(offset));
-                            }
-                            else
-                            {
-                                yield return state.Apply(new STACK_REL_16_BIT_IMMEDIATE_STORE(data, offset));
-                            }
-                        }
-                        
-                        // Otherwise there is really only one choice LDA / AND / ORA / STA sequence
-                        else
-                        {
-                            yield return state.Apply(new STACK_REL_16_BIT_READ_MODIFY_WRITE(data, mask, offset));
-                        }
-                    }
-                }
-            }
-            else
-            {
-                yield return state.Apply(new LONG_M());
-
-                // Add any possible 8-bit manipulations
+                // Otherwise, just store the next byte closest to the stack
                 if (state.S.IsScreenOffset)
                 {
                     var addr = state.S.Value;
@@ -268,27 +221,140 @@
                         }
                     }
                 }
+
+                if (state.AllowModeChange)
+                {
+                    yield return state.Apply(new LONG_M());
+                }
             }
 
-            // If the accumulator and stack are both initialized, only propose moves to locations
-            // before and after the current 256 byte stack-relative window
-            if (state.S.IsScreenOffset && state.LongA)
+            // Now consider what can be done when the accumulator is 16-bit.  All of the stack
+            // manipulation happens here, too.
+            if (state.LongA)
             {
-                // If the accumulator already has a screen offset value, just calculate it
-                if (state.A.IsScreenOffset)
+                // Handle the special case of a value sitting right on top of the stack
+                if (topWord.HasValue)
                 {
-                    var addr = state.S.Value;
-                    foreach (var datum in open.Where(x => (x.Offset - addr) > 255 || (x.Offset - addr) < 0))
+                    var datum = topWord.Value;
+
+                    // First, the simple case -- the data has no mask
+                    if (datum.Mask == 0x000)
                     {
-                        yield return state.Apply(new MOVE_STACK(datum.Offset - state.A.Value));
+                        if (state.A.IsLiteral && state.A.Value == datum.Data)
+                        {
+                            yield return state.Apply(new PHA_16());
+                        }
+                        else
+                        {
+                            // Only consider this if the value appear in the sprite more than once
+                            if (SpriteGeneratorState.DATASET_SOLID_WORDS[topWord.Value.Data] > 1)
+                            {
+                                yield return state.Apply(new LOAD_16_BIT_IMMEDIATE_AND_PUSH(topWord.Value.Data));
+                            }
+                        }
                     }
                 }
-                // Otherwise, put the stack in the accumulator
-                else
+
+                // If the stack is set, find the next word to store (just one to reduce branching factor)
+                if (state.S.IsScreenOffset)
                 {
-                    yield return state.Apply(new TSC());
+                    var addr = state.S.Value;
+
+                    var local = open.Where(WithinRangeOf(addr, 256)).ToList();
+                    var words = local
+                        .Where(x => SpriteGeneratorState.DATASET_BY_OFFSET.ContainsKey(x.Offset + 1))
+                        .Select(x => new { Low = x, High = SpriteGeneratorState.DATASET_BY_OFFSET[x.Offset + 1] })
+                        .ToList();
+
+                    foreach (var word in words)
+                    {
+                        var offset = (byte)(word.Low.Offset - addr);
+                        var data = (ushort)(word.Low.Data + (word.High.Data << 8));
+                        var mask = (ushort)(word.Low.Mask + (word.High.Mask << 8));
+                        // Easy case when mask is empty
+                        if (mask == 0x0000)
+                        {
+                            if (data == state.A.Value)
+                            {
+                                yield return state.Apply(new STACK_REL_16_BIT_STORE(offset));
+                            }
+                            else
+                            {
+                                yield return state.Apply(new STACK_REL_16_BIT_IMMEDIATE_STORE(data, offset));
+                            }
+                        }
+
+                        // Otherwise there is really only one choice LDA / AND / ORA / STA sequence
+                        else
+                        {
+                            yield return state.Apply(new STACK_REL_16_BIT_READ_MODIFY_WRITE(data, mask, offset));
+                        }
+                    }
+                }
+
+                if (state.AllowModeChange)
+                {
+                    yield return state.Apply(new SHORT_M());
                 }
             }
+
+        Done:
+            var z = 0; z += 1;
+        }
+
+        private static bool IsSolidPair(Tuple<SpriteByte, SpriteByte> pair)
+        {
+            return
+                (pair.Item1.Offset == (pair.Item2.Offset - 1)) &&
+                pair.Item1.Mask == 0x00 &&
+                pair.Item2.Mask == 0x00;
+        }
+
+        private class SolidRun
+        {
+            private readonly SpriteByte first;
+            private readonly SpriteByte last;
+        
+            public SolidRun(SpriteByte first, SpriteByte last)
+            {
+                this.first = first;
+                this.last = last;
+            }
+
+            public SpriteByte First { get { return first; } }
+            public SpriteByte Last { get { return last; } }
+            public int Count { get { return last.Offset - first.Offset + 1; } }
+        }
+
+        private SolidRun FirstSolidRun(IEnumerable<SpriteByte> open)
+        {
+            bool trigger = false;
+            SpriteByte first = default(SpriteByte);
+            SpriteByte last = default(SpriteByte);
+            
+            foreach (var item in open)
+            {
+                if (item.Mask == 0x00 && !trigger)
+                {
+                    first = item;
+                    trigger = true;
+                }
+
+                if (item.Mask != 0x00 && trigger)
+                {
+                    return new SolidRun(first, last);
+                }
+
+                last = item;
+            }
+
+            // If we get to the end and are still sold, great
+            if (last.Mask == 0x00 && trigger)
+            {
+                return new SolidRun(first, last);
+            }
+
+            return null;
         }
 
         private Func<SpriteByte, bool> WithinRangeOf(int addr, int range)

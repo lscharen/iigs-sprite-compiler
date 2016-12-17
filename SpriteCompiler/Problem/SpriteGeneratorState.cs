@@ -10,10 +10,30 @@
         public static List<SpriteByte> DATASET = null;
         public static IDictionary<int, SpriteByte> DATASET_BY_OFFSET = null;
 
+        // Histogram of the byte data
+        public static IDictionary<byte, int> DATASET_SOLID_BYTES = null;
+
+        // Histogram of all possible words -- includes overlaps, e.g. $11 $11 $11 $11 = ($1111, 3)
+        public static IDictionary<ushort, int> DATASET_SOLID_WORDS = null;
+
         public static SpriteGeneratorState Init(IEnumerable<SpriteByte> bytes)
         {
-            DATASET = bytes.ToList();
+            DATASET = bytes.OrderBy(x => x.Offset).ToList();
             DATASET_BY_OFFSET = DATASET.ToDictionary(x => (int)x.Offset, x => x);
+
+            DATASET_SOLID_BYTES = DATASET
+                .Where(x => x.Mask == 0x00)
+                .GroupBy(x => x.Data)
+                .ToDictionary(x => x.Key, x => x.Count())
+                ;
+
+            DATASET_SOLID_WORDS = DATASET
+                .Zip(DATASET.Skip(1), (x, y) => new { Left = x, Right = y })
+                .Where(x => (x.Left.Offset == (x.Right.Offset - 1)) && x.Left.Mask == 0x00 && x.Right.Mask == 0x00)
+                .Select(x => (x.Right.Data << 8) | x.Left.Data)
+                .GroupBy(x => x)
+                .ToDictionary(x => (ushort)x.Key, x => x.Count())
+                ;
 
             return new SpriteGeneratorState();
         }
@@ -44,6 +64,8 @@
             S = Register.UNINITIALIZED;
 
             P = 0x30; // Start in native mode (16 bit A/X/Y) with the carry clear
+
+            AllowModeChange = true;
         }
 
         private SpriteGeneratorState(SpriteGeneratorState other)
@@ -55,6 +77,7 @@
             D = other.D;
             S = other.S;
             P = other.P;
+            AllowModeChange = other.AllowModeChange;
         }
 
         public override string ToString()
@@ -66,18 +89,19 @@
         {
             Closed.Add(offset);
             Closed.Add((ushort)(offset + 1));
+            AllowModeChange = true;
         }
 
         public void RemoveByte(ushort offset)
         {
             Closed.Add(offset);
+            AllowModeChange = true;
         }
 
-        public List<ushort> RemainingBytes()
+        public List<SpriteByte> RemainingBytes()
         {
             return DATASET
-                .Select(x => x.Offset)
-                .Where(x => !Closed.Contains(x))
+                .Where(x => !Closed.Contains(x.Offset))
                 .ToList();                
         }
 
@@ -112,6 +136,12 @@
 
         public byte P { get; set; }
 
+        // Flag that is cleared whenever there is a switch from
+        // 8/16-bit mode.  It is reset once a PHA or STA occurs.
+        // A PEA instruction has no effect.  This gates allowable
+        // state transition to prevent long REP/SEP seqences.
+        public bool AllowModeChange { get; set; }
+
         public const byte LONG_A = 0x10;
         public const byte LONG_I = 0x20;
 
@@ -129,7 +159,8 @@
                 Y.Equals(other.Y) &&
                 D.Equals(other.D) &&
                 S.Equals(other.S) &&
-                P.Equals(other.P)
+                P.Equals(other.P) &&
+                AllowModeChange == other.AllowModeChange
                 ;
         }
 
@@ -141,7 +172,8 @@
                 Y.GetHashCode() +
                 D.GetHashCode() +
                 S.GetHashCode() +
-                P.GetHashCode()
+                P.GetHashCode() +
+                AllowModeChange.GetHashCode()
                 ;
         }
 

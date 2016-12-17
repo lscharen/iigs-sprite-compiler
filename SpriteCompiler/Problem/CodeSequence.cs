@@ -102,7 +102,11 @@ namespace SpriteCompiler.Problem
 
         public override SpriteGeneratorState Apply(SpriteGeneratorState state)
         {
-            return state.Clone(_ => _.P &= 0xEF);
+            return state.Clone(_ => 
+            {
+                _.P &= 0xEF;
+                _.AllowModeChange = false;
+            });
         }
 
         public override string ToString()
@@ -122,7 +126,11 @@ namespace SpriteCompiler.Problem
 
         public override SpriteGeneratorState Apply(SpriteGeneratorState state)
         {
-            return state.Clone(_ => _.P |= 0x10);
+            return state.Clone(_ => 
+            {
+                _.P |= 0x10;
+                _.AllowModeChange = false;
+            });
         }
 
         public override string ToString()
@@ -223,6 +231,40 @@ namespace SpriteCompiler.Problem
             );
         }
     }
+
+    public sealed class STACK_REL_8_BIT_READ_MODIFY_PUSH : CodeSequence
+    {
+        private readonly byte value;
+        private readonly byte mask;
+
+        public STACK_REL_8_BIT_READ_MODIFY_PUSH(byte value, byte mask) : base(11) { this.value = value; this.mask = mask; }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            return state.Clone(_ =>
+            {
+                _.A = Register.UNINITIALIZED;
+                _.RemoveByte((ushort)_.S.Value);
+                _.S.Add(-1);
+            });
+        }
+
+        public override string ToString()
+        {
+            return "LDA 0,s / AND #$" + mask.ToString("X2") + " / ORA #$" + value.ToString("X2") + " / PHA";
+        }
+
+        public override string Emit()
+        {
+            return String.Join("\n",
+                FormatLine("", "LDA", "0,s", "4 cycles"),
+                FormatLine("", "AND", "#$" + mask.ToString("X2"), "2 cycles"),
+                FormatLine("", "ORA", "#$" + value.ToString("X2"), "2 cycles"),
+                FormatLine("", "PHA", "", "3 cycles")
+            );
+        }
+    }
+
 
     public sealed class STACK_REL_16_BIT_STORE : CodeSequence
     {
