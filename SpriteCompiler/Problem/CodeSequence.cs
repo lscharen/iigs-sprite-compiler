@@ -48,6 +48,7 @@ namespace SpriteCompiler.Problem
             {
                 _.A = _.A.Add(offset);
                 _.S = _.A;
+                _.AllowModeChange = true;
             });
         }
 

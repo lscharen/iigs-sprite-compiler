@@ -82,7 +82,7 @@
 
         public override string ToString()
         {
-            return String.Format("A = {0:X4}, X = {1}, Y = {2}, S = {3}, D = {4}, P = {5:X2}", A, X, Y, S, D, P);
+            return String.Format("A = {0:X4}, X = {1}, Y = {2}, S = {3}, D = {4}, P = {5:X2}, Change? = {6}", A, X, Y, S, D, P, AllowModeChange);
         }
 
         public void RemoveWord(ushort offset)

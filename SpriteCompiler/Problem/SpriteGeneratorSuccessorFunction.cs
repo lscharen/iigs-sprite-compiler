@@ -108,7 +108,7 @@
             //    a second stack adjustment.
             //
             // 3. Set the stack to the first, right-most offset that end a sequence of solid bytes
-            if (!state.S.IsScreenOffset && state.A.IsScreenOffset)
+            if (!state.S.IsScreenOffset && state.A.IsScreenOffset && state.LongA)
             {
                 // If the first byte is within 255 bytes of the accumulator, propose setting
                 // the stack to the accumulator value
@@ -136,7 +136,7 @@
             // If the first byte is 256 bytes or more ahead of the current stack location,
             // then we need to advance
             var firstByteDistance = firstByte.Offset - state.S.Value;
-            if (state.S.IsScreenOffset && firstByteDistance >= 256)
+            if (state.S.IsScreenOffset && firstByteDistance >= 256 && state.LongA)
             {
                 // Go to the next byte, or the first solid edge
                 yield return state.Apply(new MOVE_STACK(firstByteDistance));
@@ -297,9 +297,6 @@
                     yield return state.Apply(new SHORT_M());
                 }
             }
-
-        Done:
-            var z = 0; z += 1;
         }
 
         private static bool IsSolidPair(Tuple<SpriteByte, SpriteByte> pair)
@@ -340,7 +337,7 @@
                     trigger = true;
                 }
 
-                if (item.Mask != 0x00 && trigger)
+                if ((item.Mask != 0x00 || (item.Offset - last.Offset) > 1) && trigger)
                 {
                     return new SolidRun(first, last);
                 }
