@@ -25,6 +25,8 @@
             // If we find a value that exceeds the current maximum, return false,
             // but keep track of the smallest value that is larger than the maximum
             // cost.
+
+            // Current bug -- three line sprite, never exceeds cost of 23
             if (node.PathCost.CompareTo(maxCost) > 0)
             {
                 nextCost = (node.PathCost.CompareTo(nextCost) < 0) ? node.PathCost : nextCost;

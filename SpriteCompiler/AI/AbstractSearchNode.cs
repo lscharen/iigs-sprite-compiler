@@ -45,5 +45,19 @@
                 pathCost = HasParent ? parent.PathCost.Add(value) : value;
             }
         }
+
+        public string WriteSolution()
+        {
+            var actions = new List<string>();
+            for (ISearchNode<A, S, T, C> node = this; node != null; node = node.Parent)
+            {
+                if (node.Action != null)
+                {
+                    actions.Add(node.Action.ToString());
+                }
+            }
+            actions.Reverse();
+            return String.Join(" ", actions);
+        }
     }
 }

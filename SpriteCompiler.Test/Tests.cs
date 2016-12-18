@@ -5,6 +5,7 @@ using SpriteCompiler.Problem;
 using SpriteCompiler.AI;
 using System.Diagnostics;
 using System.Collections.Generic;
+using FluentAssertions;
 
 namespace SpriteCompiler.Test
 {
@@ -19,9 +20,15 @@ namespace SpriteCompiler.Test
             var search = SpriteGeneratorSearchProblem.Create();
 
             // Act : solve the problem
-            var solution = search.Search(problem, SpriteGeneratorState.Init(Enumerable.Empty<SpriteByte>()));
+            var initialState = SpriteGeneratorState.Init(Enumerable.Empty<SpriteByte>());
+            var initialHeuristic = problem.Heuristic(initialState);
+
+            var solution = search.Search(problem, initialState);
 
             // Assert : The initial state IS the goal state
+            WriteOutSolution(solution, initialHeuristic);
+
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
             Assert.AreEqual(1, solution.Count());
         }
 
@@ -35,7 +42,12 @@ namespace SpriteCompiler.Test
             var search = SpriteGeneratorSearchProblem.Create();
 
             // Act : solve the problem
-            var solution = search.Search(problem, SpriteGeneratorState.Init(new byte[] { 0xAA }));
+            var data = new byte[] { 0xAA };
+
+            var initialState = SpriteGeneratorState.Init(data);
+            var initialHeuristic = problem.Heuristic(initialState);
+
+            var solution = search.Search(problem, initialState);
 
             // Assert
             //
@@ -48,8 +60,9 @@ namespace SpriteCompiler.Test
             // LONG A     = 13 cycles
 
             // Write out the solution
-            WriteOutSolution(solution);
+            WriteOutSolution(solution, initialHeuristic);
 
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
             Assert.AreEqual(5, solution.Count());
             Assert.AreEqual(13, (int)solution.Last().PathCost);
         }
@@ -62,7 +75,12 @@ namespace SpriteCompiler.Test
             var search = SpriteGeneratorSearchProblem.Create();
 
             // Act : solve the problem
-            var solution = search.Search(problem, SpriteGeneratorState.Init(new byte[] { 0xAA, 0x55 }));
+            var data = new byte[] { 0xAA, 0x55 };
+
+            var initialState = SpriteGeneratorState.Init(data);
+            var initialHeuristic = problem.Heuristic(initialState);
+
+            var solution = search.Search(problem, initialState);
 
             // Assert
             //
@@ -71,10 +89,17 @@ namespace SpriteCompiler.Test
             // TCS          
             // LDA #$55AA
             // STA 0,s     = 10 cycles
-
+            //
+            // Alternate
+            //
+            // ADC #1
+            // TCS
+            // PEA #$55AA  = 10 cycles
+            
             // Write out the solution
-            WriteOutSolution(solution);
+            WriteOutSolution(solution, initialHeuristic);
 
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
             Assert.AreEqual(3, solution.Count());
             Assert.AreEqual(10, (int)solution.Last().PathCost);
         }
@@ -87,7 +112,12 @@ namespace SpriteCompiler.Test
             var search = SpriteGeneratorSearchProblem.Create();
 
             // Act : solve the problem
-            var solution = search.Search(problem, SpriteGeneratorState.Init(new byte[] { 0x11, 0x22, 0x22 }));
+            var data = new byte[] { 0x11, 0x22, 0x22 };
+
+            var initialState = SpriteGeneratorState.Init(data);
+            var initialHeuristic = problem.Heuristic(initialState);
+
+            var solution = search.Search(problem, initialState);
 
             // Assert
             //
@@ -100,8 +130,9 @@ namespace SpriteCompiler.Test
             // STA 1,s    = 18 cycles
 
             // Write out the solution
-            WriteOutSolution(solution);
+            WriteOutSolution(solution, initialHeuristic);
 
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
             Assert.AreEqual(18, (int)solution.Last().PathCost);
         }
 
@@ -116,7 +147,10 @@ namespace SpriteCompiler.Test
             var data = new byte[] { 0x00, 0x11 };
             var mask = new byte[] { 0xFF, 0x00 };
 
-            var solution = search.Search(problem, SpriteGeneratorState.Init(data, mask));
+            var initialState = SpriteGeneratorState.Init(data, mask);
+            var initialHeuristic = problem.Heuristic(initialState);
+
+            var solution = search.Search(problem, initialState);
 
             // Assert
             //
@@ -124,8 +158,9 @@ namespace SpriteCompiler.Test
             // the store happens at offset 1, instead of 0.
 
             // Write out the solution
-            WriteOutSolution(solution);
+            WriteOutSolution(solution, initialHeuristic);
 
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
             Assert.AreEqual(5, solution.Count());
             Assert.AreEqual(14, (int)solution.Last().PathCost);
         }
@@ -141,7 +176,10 @@ namespace SpriteCompiler.Test
             var data = new byte[] { 0x01, 0x11 };
             var mask = new byte[] { 0xF0, 0x00 };
 
-            var solution = search.Search(problem, SpriteGeneratorState.Init(data, mask));
+            var initialState = SpriteGeneratorState.Init(data, mask);
+            var initialHeuristic = problem.Heuristic(initialState);
+
+            var solution = search.Search(problem, initialState);
 
             // Assert
             //
@@ -154,8 +192,9 @@ namespace SpriteCompiler.Test
             // STA 0,s     = 18 cycles
 
             // Write out the solution
-            WriteOutSolution(solution);
+            WriteOutSolution(solution, initialHeuristic);
 
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
             Assert.AreEqual(18, (int)solution.Last().PathCost);
         }
 
@@ -167,7 +206,12 @@ namespace SpriteCompiler.Test
             var search = SpriteGeneratorSearchProblem.Create();
 
             // Act : solve the problem
-            var solution = search.Search(problem, SpriteGeneratorState.Init(new byte[] { 0xAA, 0x55, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 }));
+            var data = new byte[] { 0xAA, 0x55, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
+
+            var initialState = SpriteGeneratorState.Init(data);
+            var initialHeuristic = problem.Heuristic(initialState);
+
+            var solution = search.Search(problem, initialState);
 
             // Assert
             //
@@ -181,8 +225,9 @@ namespace SpriteCompiler.Test
             // PEA $55AA   = 25 cycles
 
             // Write out the solution
-            WriteOutSolution(solution);
+            WriteOutSolution(solution, initialHeuristic);
 
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
             Assert.AreEqual(6, solution.Count());
             Assert.AreEqual(25, (int)solution.Last().PathCost);
         }
@@ -198,7 +243,10 @@ namespace SpriteCompiler.Test
             var data = new byte[] { 0x01, 0x11, 0x22, 0x11, 0x33 };
             var mask = new byte[] { 0xF0, 0x00, 0x00, 0x00, 0x00 };
 
-            var solution = search.Search(problem, SpriteGeneratorState.Init(data, mask));
+            var initialState = SpriteGeneratorState.Init(data, mask);
+            var initialHeuristic = problem.Heuristic(initialState);
+
+            var solution = search.Search(problem, initialState);
 
             // Assert
             //
@@ -214,8 +262,9 @@ namespace SpriteCompiler.Test
             // STA 0,s   = 31 cycles
 
             // Write out the solution
-            WriteOutSolution(solution);
+            WriteOutSolution(solution, initialHeuristic);
 
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
             Assert.AreEqual(31, (int)solution.Last().PathCost);
         }
 
@@ -234,7 +283,10 @@ namespace SpriteCompiler.Test
                 new SpriteByte(0x11, 320)
             };
 
-            var solution = search.Search(problem, SpriteGeneratorState.Init(data));
+            var initialState = SpriteGeneratorState.Init(data);
+            var initialHeuristic = problem.Heuristic(initialState);
+            
+            var solution = search.Search(problem, initialState);
 
             // Current best solution
             //
@@ -269,19 +321,31 @@ namespace SpriteCompiler.Test
             //; Total Cost = 29 cycles
 
             // Write out the solution
-            WriteOutSolution(solution);
+            WriteOutSolution(solution, initialHeuristic);
 
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
             Assert.AreEqual(35, (int)solution.Last().PathCost);
         }
 
-        private void WriteOutSolution(IEnumerable<SpriteGeneratorSearchNode> solution)
+        private void WriteOutSolution(IEnumerable<SpriteGeneratorSearchNode> solution, IntegerCost h0 = null)
         {
+            if (!solution.Any())
+            {
+                Trace.WriteLine("No solution found");
+                return;
+            }
+
             foreach (var step in solution.Skip(1))
             {
                 Trace.WriteLine(step.Action.Emit());
             }
 
             Trace.WriteLine(string.Format("; Total Cost = {0} cycles", (int)solution.Last().PathCost));
+
+            if (h0 != null)
+            {
+                Trace.WriteLine(string.Format("; h(0) = {0} cycles", (int)h0));
+            }
         }
     }
 }

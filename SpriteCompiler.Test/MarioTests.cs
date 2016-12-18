@@ -5,6 +5,7 @@ using SpriteCompiler.Problem;
 using SpriteCompiler.AI;
 using System.Diagnostics;
 using System.Collections.Generic;
+using FluentAssertions;
 
 namespace SpriteCompiler.Test
 {
@@ -53,10 +54,15 @@ namespace SpriteCompiler.Test
             };
 
             // Act : solve the problem
-            var solution = search.Search(problem, SpriteGeneratorState.Init(sprite));
+            var initialState = SpriteGeneratorState.Init(sprite);
+            var initialHeuristic = problem.Heuristic(initialState);
 
-            // Assert : The initial state IS the goal state
-            WriteOutSolution(solution);
+            var solution = search.Search(problem, initialState);
+
+            // Assert : The initial state IS the goal state (47 cycles is the currrent best solution)
+            WriteOutSolution(solution, initialHeuristic);
+
+            initialHeuristic.Should().BeLessOrEqualTo(solution.Last().PathCost);
         }
 
         [TestMethod]
@@ -64,7 +70,7 @@ namespace SpriteCompiler.Test
         {
             // Arrange
             var problem = SpriteGeneratorSearchProblem.CreateSearchProblem();
-            var search = SpriteGeneratorSearchProblem.Create(); // max budget of 80 cycles
+            var search = SpriteGeneratorSearchProblem.Create(80); // max budget of 80 cycles
             var sprite = new List<SpriteByte>
             {
                 new SpriteByte(0x11, 0x00, 3),
@@ -84,13 +90,16 @@ namespace SpriteCompiler.Test
             };
 
             // Act : solve the problem
-            var solution = search.Search(problem, SpriteGeneratorState.Init(sprite));
+            var initialState = SpriteGeneratorState.Init(sprite);
+            var initialHeuristic = problem.Heuristic(initialState);
+
+            var solution = search.Search(problem, initialState);
 
             // Assert : The initial state IS the goal state
             WriteOutSolution(solution);
         }
 
-        private void WriteOutSolution(IEnumerable<SpriteGeneratorSearchNode> solution)
+        private void WriteOutSolution(IEnumerable<SpriteGeneratorSearchNode> solution, IntegerCost h0 = null)
         {
             foreach (var step in solution.Skip(1))
             {
@@ -98,6 +107,11 @@ namespace SpriteCompiler.Test
             }
 
             Trace.WriteLine(string.Format("; Total Cost = {0} cycles", (int)solution.Last().PathCost));
+
+            if (h0 != null)
+            {
+                Trace.WriteLine(string.Format("; h(0) = {0} cycles", (int)h0));
+            }
         }
     }
 }
