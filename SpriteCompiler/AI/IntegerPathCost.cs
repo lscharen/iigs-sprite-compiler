@@ -7,6 +7,9 @@ namespace SpriteCompiler.AI
     /// </summary>
     public sealed class IntegerCost : ICost<IntegerCost>
     {
+        public static IntegerCost ZERO = new IntegerCost(0);
+        public static IntegerCost ONE = new IntegerCost(1);
+
         private readonly int value;
 
         public IntegerCost()
