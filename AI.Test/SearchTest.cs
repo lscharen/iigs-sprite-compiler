@@ -152,10 +152,10 @@ namespace AI.Test
         public void EightPuzzleTest()
         {
             // Number of trials to run
-            int N = 10;
+            int N = 100;
 
             // Maximum depth of the solution
-            int dmax = 6;
+            int dmax = 10;
 
             // Now we define the search algorithm and the type of node expansion.  Russell & Norvig discuss
             // two type of expansion strategies: tree search and graph search.  One will avoid cycles in the search
@@ -166,8 +166,8 @@ namespace AI.Test
             var treeSearch = new TreeSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(expander);
 
             var ids = new IterativeDeepeningSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(treeSearch, dmax);
-            var aStarH1 = new AStarSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(treeSearch, new QueueAdapter<EightPuzzleNode, IntegerCost>());
-            var aStarH2 = new IterativeDeepeningAStarSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(treeSearch, (IntegerCost)dmax);
+            var aStarH1 = new AStarSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(treeSearch, () => new QueueAdapter<EightPuzzleNode, IntegerCost>());
+            var aStarH2 = new AStarSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(treeSearch, () => new QueueAdapter<EightPuzzleNode, IntegerCost>());
 
             // Depth runs from 0 to dmax
             int[,] d = new int[dmax + 1, 3];
@@ -210,6 +210,8 @@ namespace AI.Test
                         System.Diagnostics.Trace.WriteLine("A* (h2) Solution has depth " + depth + " nodes and expanded " + expander[IntrumentedParameters.NODES_EXPANDED] + " nodes");
                         d[depth, 2] += 1;
                         n[depth, 2] += expander[IntrumentedParameters.NODES_EXPANDED];
+
+                        // PrintSolution(solution);
                     }
                 }
             }
@@ -218,7 +220,7 @@ namespace AI.Test
             Trace.WriteLine("| d|   IDS   | A*(h1) | A*(h2) ||   IDS   | A*(h1) | A*(h2) |");
             Trace.WriteLine("+--+---------+--------+--------++---------+--------+--------+");
 
-            for (int i = 0; i <= dmax; i++)
+            for (int i = 1; i <= dmax; i++)
             {
                 var bf0 = ComputeBranchingFactor((float)n[i, 0] / (float)d[i, 0], i);
                 var bf1 = ComputeBranchingFactor((float)n[i, 1] / (float)d[i, 1], i);

@@ -138,8 +138,17 @@
             var firstByteDistance = firstByte.Offset - state.S.Value;
             if (state.S.IsScreenOffset && firstByteDistance >= 256 && state.LongA)
             {
+                // If the accumulator is not set to the stack
+                if (!state.A.IsScreenOffset)
+                {
+                    yield return state.Apply(new TSC());
+                }
+
                 // Go to the next byte, or the first solid edge
-                yield return state.Apply(new MOVE_STACK(firstByteDistance));
+                else
+                {
+                    yield return state.Apply(new MOVE_STACK(firstByteDistance));
+                }
 
                 yield break;
             }

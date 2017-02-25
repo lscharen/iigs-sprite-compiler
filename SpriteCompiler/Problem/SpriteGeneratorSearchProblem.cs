@@ -1,6 +1,8 @@
 ﻿namespace SpriteCompiler.Problem
 {
     using SpriteCompiler.AI;
+    using SpriteCompiler.AI.Queue;
+    using System;
 
     public sealed class SpriteGeneratorSearchProblem
     {
@@ -18,7 +20,7 @@
         {
             var expander = new SpriteGeneratorNodeExpander();
             var strategy = new TreeSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost>(expander);
-            var queue = new Adapters.QueueAdapter<SpriteGeneratorSearchNode, IntegerCost>();
+            Func<IQueue<SpriteGeneratorSearchNode>> queue = () => new Adapters.QueueAdapter<SpriteGeneratorSearchNode, IntegerCost>();
 
             return new AStarSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost>(strategy, queue);
         }
@@ -27,7 +29,6 @@
         {
             var expander = new SpriteGeneratorNodeExpander();
             var strategy = new TreeSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost>(expander);
-            var queue = new Adapters.QueueAdapter<SpriteGeneratorSearchNode, IntegerCost>();
 
             var maxCost = (IntegerCost)maxCycles;
             return new IterativeDeepeningAStarSearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost>(strategy, maxCost);
