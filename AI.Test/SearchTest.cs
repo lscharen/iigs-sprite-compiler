@@ -46,11 +46,9 @@ namespace AI.Test
 
     public class EightPuzzleStepCost : IStepCostFunction<Direction, EightPuzzleBoard, IntegerCost>
     {
-        private static readonly IntegerCost UNIT_STEP_COST = (IntegerCost) 1;
-
         public IntegerCost StepCost(EightPuzzleBoard fromState, Direction action, EightPuzzleBoard toState)
         {
-            return UNIT_STEP_COST;            
+            return IntegerCost.ONE;            
         }
     }
 
@@ -116,18 +114,15 @@ namespace AI.Test
         private ISearchProblem<Direction, EightPuzzleBoard, IntegerCost> problem_h1;
         private ISearchProblem<Direction, EightPuzzleBoard, IntegerCost> problem_h2;
 
-        // Define the goal state
-        private EightPuzzleBoard goal = new EightPuzzleBoard(new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
-
         [TestInitialize]
         public void SetUp()
         {           
             // These objects define the abstract search problem
-            var goalTest = new EightPuzzleGoalTest(goal);
+            var goalTest = new EightPuzzleGoalTest(EightPuzzleBoard.GOAL);
             var stepCost = new EightPuzzleStepCost();
             var successorFn = new EightPuzzleSuccessorFunction();
-            var heuristic1 = new MisplacedHeuristic(goal);
-            var heuristic2 = new ManhattanHeuristic(goal);
+            var heuristic1 = new MisplacedHeuristic(EightPuzzleBoard.GOAL);
+            var heuristic2 = new ManhattanHeuristic(EightPuzzleBoard.GOAL);
 
             // Create three search problem objects.  One without a heuristic and two with the different
             // heuristics
@@ -136,11 +131,31 @@ namespace AI.Test
             problem_h2 = new SearchProblem<Direction, EightPuzzleBoard, IntegerCost>(goalTest, stepCost, successorFn, heuristic2);
         }
 
-        [TestMethod]
-        public void TestMethod1()
+        private void PrintSolution(IEnumerable<EightPuzzleNode> solution)
         {
-            int N = 1;
-            int dmax = 3;
+            if (solution == null)
+            {
+                System.Diagnostics.Trace.WriteLine("No solution");
+                return;
+            }
+
+            System.Diagnostics.Trace.WriteLine(solution.First().State.ToString());
+            foreach (var node in solution.Skip(1))
+            {
+                System.Diagnostics.Trace.WriteLine("");
+                System.Diagnostics.Trace.WriteLine(node.Action.ToString());
+                System.Diagnostics.Trace.WriteLine(node.State.ToString());
+            }
+        }
+
+        [TestMethod]
+        public void EightPuzzleTest()
+        {
+            // Number of trials to run
+            int N = 10;
+
+            // Maximum depth of the solution
+            int dmax = 6;
 
             // Now we define the search algorithm and the type of node expansion.  Russell & Norvig discuss
             // two type of expansion strategies: tree search and graph search.  One will avoid cycles in the search
@@ -149,51 +164,61 @@ namespace AI.Test
             // They state that a tree search was used to generate Figure 4.8;
             var expander = new InstrumentedNodeExpander<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(new EightPuzzleNodeExpander());
             var treeSearch = new TreeSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(expander);
+
             var ids = new IterativeDeepeningSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(treeSearch, dmax);
             var aStarH1 = new AStarSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(treeSearch, new QueueAdapter<EightPuzzleNode, IntegerCost>());
             var aStarH2 = new IterativeDeepeningAStarSearch<Direction, EightPuzzleBoard, EightPuzzleNode, IntegerCost>(treeSearch, (IntegerCost)dmax);
 
             // Depth runs from 0 to dmax
-            int[,] d = new int[dmax + 2, 3];
-            int[,] n = new int[dmax + 2, 3];
+            int[,] d = new int[dmax + 1, 3];
+            int[,] n = new int[dmax + 1, 3];
 
-            for (int i = 0; i < N; i++)
+            for (int _d = 1; _d <= dmax; _d++)
             {
-                // Invoke the search on the problem with a particular starting state
-                var initialState = goal.Scramble(dmax);
+                for (int i = 0; i < N; i++)
+                {
+                    // Invoke the search on the problem with a particular starting state. Scramble creates a new instance
+                    var initialState = EightPuzzleBoard.GOAL.Scramble(_d);
 
-                /*
-                {
-                    expander.ClearMetrics();
-                    var solution = ids.Search(problem_none, initialState);
-                    System.Diagnostics.Trace.WriteLine("IDS Solution has " + solution.Count() + " nodes and expanded " + expander[IntrumentedParameters.NODES_EXPANDED] + " nodes");
-                    d[solution.Count(), 0] += 1;
-                    n[solution.Count(), 0] += expander[IntrumentedParameters.NODES_EXPANDED];
-                }
-                
-                {
-                    expander.ClearMetrics();
-                    var solution = aStarH1.Search(problem_h1, initialState);
-                    System.Diagnostics.Trace.WriteLine("A* (h1) Solution has " + solution.Count() + " nodes and expanded " + expander[IntrumentedParameters.NODES_EXPANDED] + " nodes");
-                    d[solution.Count(), 1] += 1;
-                    n[solution.Count(), 1] += expander[IntrumentedParameters.NODES_EXPANDED];
-                }
-                */
-                {
-                    expander.ClearMetrics();
-                    var solution = aStarH2.Search(problem_h2, initialState);
-                    System.Diagnostics.Trace.WriteLine("A* (h2) Solution has " + solution.Count() + " nodes and expanded " + expander[IntrumentedParameters.NODES_EXPANDED] + " nodes");
-                    d[solution.Count(), 2] += 1;
-                    n[solution.Count(), 2] += expander[IntrumentedParameters.NODES_EXPANDED];
+                    {
+                        expander.ClearMetrics();
+                        var solution = ids.Search(problem_none, new EightPuzzleBoard(initialState));
+                        var depth = solution.Count() - 1;
+
+                        System.Diagnostics.Trace.WriteLine("IDS Solution has depth " + depth + " and expanded " + expander[IntrumentedParameters.NODES_EXPANDED] + " nodes");
+                        d[depth, 0] += 1;
+                        n[depth, 0] += expander[IntrumentedParameters.NODES_EXPANDED];
+                    }
+
+                    {
+                        expander.ClearMetrics();
+                        var solution = aStarH1.Search(problem_h1, new EightPuzzleBoard(initialState));
+                        var depth = solution.Count() - 1;
+
+                        System.Diagnostics.Trace.WriteLine("A* (h1) Solution has depth " + depth + " nodes and expanded " + expander[IntrumentedParameters.NODES_EXPANDED] + " nodes");
+                        d[depth, 1] += 1;
+                        n[depth, 1] += expander[IntrumentedParameters.NODES_EXPANDED];
+
+                        // PrintSolution(solution);
+                    }
+
+                    {
+                        expander.ClearMetrics();
+                        var solution = aStarH2.Search(problem_h2, new EightPuzzleBoard(initialState));
+                        var depth = solution.Count() - 1;
+
+                        System.Diagnostics.Trace.WriteLine("A* (h2) Solution has depth " + depth + " nodes and expanded " + expander[IntrumentedParameters.NODES_EXPANDED] + " nodes");
+                        d[depth, 2] += 1;
+                        n[depth, 2] += expander[IntrumentedParameters.NODES_EXPANDED];
+                    }
                 }
             }
-
             Trace.WriteLine("|         Search Cost                Branching Factor       |");
             Trace.WriteLine("+--+---------+--------+--------++---------+--------+--------+");
             Trace.WriteLine("| d|   IDS   | A*(h1) | A*(h2) ||   IDS   | A*(h1) | A*(h2) |");
             Trace.WriteLine("+--+---------+--------+--------++---------+--------+--------+");
 
-            for (int i = 0; i <= dmax + 1; i++)
+            for (int i = 0; i <= dmax; i++)
             {
                 var bf0 = ComputeBranchingFactor((float)n[i, 0] / (float)d[i, 0], i);
                 var bf1 = ComputeBranchingFactor((float)n[i, 1] / (float)d[i, 1], i);

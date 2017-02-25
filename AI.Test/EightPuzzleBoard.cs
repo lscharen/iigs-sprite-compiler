@@ -8,6 +8,19 @@ namespace AI.Test
 {
     public static class DirectionExtensions
     {
+        public static bool IsOppositeOf(this Direction direction, Direction otherDirection)
+        {
+            switch (direction)
+            {
+                case Direction.LEFT: return otherDirection.Equals(Direction.RIGHT);
+                case Direction.RIGHT: return otherDirection.Equals(Direction.LEFT);
+                case Direction.UP: return otherDirection.Equals(Direction.DOWN);
+                case Direction.DOWN: return otherDirection.Equals(Direction.UP);
+            }
+
+            throw new ArgumentException();
+        }
+
         public static bool CanMove(this Direction direction, int p)
         {
             switch (direction)
@@ -45,6 +58,9 @@ namespace AI.Test
 
     public class EightPuzzleBoard
     {
+        // The goal state is the canonical end state
+        public static EightPuzzleBoard GOAL = new EightPuzzleBoard();
+
         protected static Random rng = new Random();
 
 
@@ -75,14 +91,16 @@ namespace AI.Test
         public EightPuzzleBoard Scramble(int n)
         {
             var newPuzzle = new EightPuzzleBoard(this);
-            var direction = Enum.GetValues(typeof(Direction)).Cast<Direction>().ToList();
+            var directions = Enum.GetValues(typeof(Direction)).Cast<Direction>().ToList();
+            var lastDirection = Direction.DOWN;
 
             for (int i = 0; i < n;)
             {
-                int j = rng.Next(direction.Count);
-                if (newPuzzle.CanMoveGap(direction[j]))
+                var direction = directions[rng.Next(directions.Count)];
+                if (newPuzzle.CanMoveGap(direction) && (i == 0 || !direction.IsOppositeOf(lastDirection)))
                 {
-                    newPuzzle.MoveGap(direction[j]);
+                    newPuzzle.MoveGap(direction);
+                    lastDirection = direction;
                     i += 1;
                 }
             }
