@@ -335,7 +335,7 @@ namespace SpriteCompiler.Test
                 return;
             }
 
-            foreach (var step in solution.Skip(1))
+            foreach (var step in solution.ToList().Skip(1))
             {
                 Trace.WriteLine(step.Action.Emit());
             }
