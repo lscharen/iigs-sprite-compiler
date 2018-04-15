@@ -16,6 +16,11 @@
         // Histogram of all possible words -- includes overlaps, e.g. $11 $11 $11 $11 = ($1111, 3)
         public static IDictionary<ushort, int> DATASET_SOLID_WORDS = null;
 
+        public static SpriteGeneratorState Init(IEnumerable<Helpers.BrutalDeluxeClassifier.ColoredSpriteData> bytes)
+        {
+            return Init(bytes.Select(x => new SpriteByte((byte)x.Data, (byte)x.Mask, (ushort)x.Offset)));
+        }
+
         public static SpriteGeneratorState Init(IEnumerable<SpriteByte> bytes)
         {
             DATASET = bytes.OrderBy(x => x.Offset).ToList();
@@ -139,7 +144,9 @@
         // Flag that is cleared whenever there is a switch from
         // 8/16-bit mode.  It is reset once a PHA or STA occurs.
         // A PEA instruction has no effect.  This gates allowable
-        // state transition to prevent long REP/SEP seqences.
+        // state transition to prevent long REP/SEP seqences by ensuring
+        // that switching modes (2 cycles) is always treated as more
+        // expensive than a data store.
         public bool AllowModeChange { get; set; }
 
         public const byte LONG_A = 0x10;

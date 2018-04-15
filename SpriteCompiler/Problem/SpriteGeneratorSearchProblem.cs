@@ -4,16 +4,21 @@
     using SpriteCompiler.AI.Queue;
     using System;
 
-    public sealed class SpriteGeneratorSearchProblem
+    public sealed class SpriteGeneratorSearchProblem : SearchProblem<CodeSequence, SpriteGeneratorState, IntegerCost>
     {
-        public static ISearchProblem<CodeSequence, SpriteGeneratorState, IntegerCost> CreateSearchProblem()
+        public SpriteGeneratorSearchProblem()
+            : base(
+                  new SpriteGeneratorGoalTest(),
+                  new SpriteGeneratorStepCost(),
+                  new SpriteGeneratorSuccessorFunction(),
+                  new SpriteGeneratorHeuristicFunction()
+                  )
         {
-            var goalTest = new SpriteGeneratorGoalTest();
-            var stepCost = new SpriteGeneratorStepCost();
-            var successors = new SpriteGeneratorSuccessorFunction();
-            var heuristic = new SpriteGeneratorHeuristicFunction();
+        }
 
-            return new SearchProblem<CodeSequence, SpriteGeneratorState, IntegerCost>(goalTest, stepCost, successors, heuristic);
+        public static SpriteGeneratorSearchProblem CreateSearchProblem()
+        {
+            return new SpriteGeneratorSearchProblem();
         }
 
         public static ISearch<CodeSequence, SpriteGeneratorState, SpriteGeneratorSearchNode, IntegerCost> Create()

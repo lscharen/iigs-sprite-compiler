@@ -81,7 +81,7 @@
             // Get the list of remaining bytes by removing the closed list from the global sprite dataset
             var open = state.RemainingBytes();
 
-            // If the open list is empty, there can be only one reaons -- we're in an 8-bit
+            // If the open list is empty, there can be only one reason -- we're in 8-bit
             // mode.
             if (!open.Any())
             {
@@ -107,11 +107,11 @@
             //    bytes and moving the stack forward a bit can allow the code to reach them without needing
             //    a second stack adjustment.
             //
-            // 3. Set the stack to the first, right-most offset that end a sequence of solid bytes
+            // 3. Set the stack to the first, right-most offset that ends a sequence of solid bytes
             if (!state.S.IsScreenOffset && state.A.IsScreenOffset && state.LongA)
             {
                 // If the first byte is within 255 bytes of the accumulator, propose setting
-                // the stack to the accumulator value
+                // the stack to the accumulator value, which is the fastest
                 var delta = firstByte.Offset - state.A.Value;
                 if (delta >= 0 && delta < 256)
                 {

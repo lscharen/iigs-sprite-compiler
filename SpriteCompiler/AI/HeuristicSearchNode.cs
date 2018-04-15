@@ -2,9 +2,12 @@
 {
     using System;
 
+    public interface IHeuristicSearchNodeWithMemory<A, S, T, C> : IHeuristicSearchNode<A, S, T, C> where C : ICost<C>
+    {
+        C F { get; set; }
+    }
     public interface IHeuristicSearchNode<A, S, T, C> : ISearchNode<A, S, T, C> where C : ICost<C>
     {
-        C EstCost { get; }
     }
 
     public class HeuristicSearchNode<A, S, T, C> : AbstractSearchNode<A, S, T, C>, IHeuristicSearchNode<A, S, T, C>
@@ -19,7 +22,7 @@
 
         public C Heuristic { get; set; }
 
-        public C EstCost
+        public override C EstCost
         {
             get
             {

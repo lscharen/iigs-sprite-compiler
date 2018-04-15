@@ -9,6 +9,6 @@
         /// Perform a new search on the specified search problem using the given
         /// initial state as a starting point.  The method will return an empty
         /// list on failure.
-        IEnumerable<T> Search(ISearchProblem<A, S, C> problem, S initialState);        
+        IEnumerable<T> Search(ISearchProblem<A, S, C> problem, S initialState);
     }
 }

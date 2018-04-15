@@ -14,7 +14,6 @@
         where C : ICost<C>
     {
         private readonly SimplePriorityQueue<T, C> queue = new SimplePriorityQueue<T, C>();
-
         public bool Empty { get { return queue.Count == 0;  } }
 
         public void AddRange(IEnumerable<T> items)

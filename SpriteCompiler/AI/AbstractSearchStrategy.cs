@@ -59,7 +59,7 @@
         /// 
         /// </summary>
         /// <param name="problem"></param>
-        /// <param name="fringe">Must be initialize -- usually that means being empty</param>
+        /// <param name="fringe">Must be initialized -- usually that means being empty</param>
         /// <param name="initialState"></param>
         /// <returns></returns>
         public virtual IEnumerable<T> Search(ISearchProblem<A, S, C> problem, IQueue<T> fringe, S initialState)
@@ -80,12 +80,12 @@
                 AddNodes(fringe, node, problem);
             }
 
-            return Enumerable.Empty<T>();            
+            return Enumerable.Empty<T>();
         }        
 
         /// <summary>
         /// When it's time to actually expand a node and add the new states to the fringe, different
-        /// algorhtms can make different choices
+        /// algorithms can make different choices
         /// </summary>
         /// <param name="fringe"></param>
         /// <param name="node"></param>

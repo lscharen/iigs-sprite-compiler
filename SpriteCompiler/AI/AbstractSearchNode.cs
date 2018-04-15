@@ -30,7 +30,7 @@
         public int Depth { get { return depth; } }
         public S State { get { return state; } }
 
-        public C EstCost { get { return PathCost; } }
+        public virtual C EstCost { get { return PathCost; } }
 
         public C StepCost
         {

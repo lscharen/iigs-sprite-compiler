@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpriteCompiler.Test", "Spri
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AI.Test", "AI.Test\AI.Test.csproj", "{D76DB013-8897-4C2D-ACF3-FB55585D3677}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpriteCompiler.GUI", "SpriteCompiler.GUI\SpriteCompiler.GUI.csproj", "{DA09C3EA-7742-4FAF-BAB9-6B39E994090D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{D76DB013-8897-4C2D-ACF3-FB55585D3677}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D76DB013-8897-4C2D-ACF3-FB55585D3677}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D76DB013-8897-4C2D-ACF3-FB55585D3677}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA09C3EA-7742-4FAF-BAB9-6B39E994090D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA09C3EA-7742-4FAF-BAB9-6B39E994090D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA09C3EA-7742-4FAF-BAB9-6B39E994090D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA09C3EA-7742-4FAF-BAB9-6B39E994090D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

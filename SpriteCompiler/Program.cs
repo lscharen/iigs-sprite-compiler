@@ -1,6 +1,7 @@
 ﻿namespace SpriteCompiler
 {
     using Fclp;
+    using SpriteCompiler.Helpers;
     using SpriteCompiler.Problem;
     using System;
     using System.Collections.Generic;
@@ -9,6 +10,31 @@
 
     public static class ExtensionMethods
     {
+        public static void Dump(this SpriteCompiler.Helpers.BrutalDeluxeClassifier.ByteColor[,] array)
+        {
+            var rows = array.GetLength(1);
+            var cols = array.GetLength(0);
+
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    char chr = ' ';
+                    switch (array[c, r])
+                    {
+                        case BrutalDeluxeClassifier.ByteColor.BLUE: chr = 'B'; break;
+                        case BrutalDeluxeClassifier.ByteColor.GREEN: chr = 'G'; break;
+                        case BrutalDeluxeClassifier.ByteColor.ORANGE: chr = 'O'; break;
+                        case BrutalDeluxeClassifier.ByteColor.PURPLE: chr = 'P'; break;
+                        case BrutalDeluxeClassifier.ByteColor.RED: chr = 'R'; break;
+                        case BrutalDeluxeClassifier.ByteColor.YELLOW: chr = 'Y'; break;
+                    }
+                    Console.Write(chr);
+                }
+                Console.Write(Environment.NewLine);
+            }
+        }
+
         public static void Dump(this int[,] array)
         {
             var rows = array.GetLength(1);
@@ -18,13 +44,13 @@
             {
                 for (int c = 0; c < cols; c++)
                 {
-                    Console.Write(array[c, r].ToString("X1"));
+                    Console.Write(array[c, r].ToString("X2"));
                 }
                 Console.Write(Environment.NewLine);
             }
         }
-
     }
+
     public class ApplicationArguments
     {
         public List<string> Data { get; set; }
@@ -91,84 +117,16 @@
             // Handle the difference command line cases
             if (!String.IsNullOrEmpty(filename))
             {
-                var palette = new Dictionary<Color, int>();
-                int nextIndex = 1;
-
-                // Convert the image / mask to a paletted image
                 var bitmap = new Bitmap(filename);
-                int[,] data_buffer = new int[bitmap.Width, bitmap.Height];
-                int[,] mask_buffer = new int[bitmap.Width, bitmap.Height];
+                var record = BrutalDeluxeClassifier.Decompose(bitmap, maskColor);
 
-                Console.WriteLine(String.Format("  Image is {0} x {1}", bitmap.Width, bitmap.Height));
-
-                if (maskColor.HasValue)
-                {
-                    palette[maskColor.Value] = 0;
-                }
-
-                for (int r = 0; r < bitmap.Height; r++)
-                {
-                    for (int w = 0; w < bitmap.Width; w++)
-                    {
-                        var rgb = bitmap.GetPixel(w, r);
-                        
-                        if (!palette.ContainsKey(rgb))
-                        {
-                            if (palette.Count >= 15)
-                            {
-                                throw new Exception("Image cannot have more than 15 unique colors");
-                            }
-                            palette[rgb] = nextIndex++;
-                        }
-
-                        data_buffer[w, r] = palette[rgb];
-
-                        if (maskColor.HasValue)
-                        {
-                            if (rgb.Equals(maskColor.Value))
-                            {
-                                data_buffer[w, r] = 0x0;
-                                mask_buffer[w, r] = 0xF;
-                            }
-                            else
-                            {
-                                data_buffer[w, r] = palette[rgb];
-                                mask_buffer[w, r] = 0x0;
-                            }
-                        }
-                        else
-                        {
-                            data_buffer[w, r] = palette[rgb];
-                        }
-                    }
-                }
-
-                data_buffer.Dump();
+                record.Data.Dump();
                 Console.WriteLine();
-                mask_buffer.Dump();
+                record.Mask.Dump();
+                Console.WriteLine();
+                record.Classes.Dump();
 
-                // Pair up pixels to build bytes                
-                for (int r = 0; r < bitmap.Height; r++)
-                {
-                    for (int w = 0; w < bitmap.Width; w += 2)
-                    {
-                        var mask_byte = (byte)((mask_buffer[w, r] << 4) + mask_buffer[w + 1, r]);
-                        var data_byte = (byte)((data_buffer[w, r] << 4) + data_buffer[w + 1, r]);
-                        var offset = (ushort)(r * 160 + (w / 2));
-
-                        // Skip fully transparent bytes
-                        if (mask_byte == 0xFF)
-                        {
-                            continue;
-                        }
-
-                        Console.WriteLine(String.Format("Adding ({0:X2}, {1:X2}, {2})", data_byte, mask_byte, offset));
-
-                        sprite.Add(new SpriteByte(data_byte, mask_byte, offset));
-                    }
-                }
-
-                initialState = SpriteGeneratorState.Init(sprite);
+                //initialState = SpriteGeneratorState.Init(sprite);
             }
             else if (data.Count == mask.Count)
             {
@@ -179,9 +137,8 @@
                 initialState = SpriteGeneratorState.Init(data);
             }
 
-            var solution = search.Search(problem, initialState);
-
-            WriteOutSolution(solution);
+            //var solution = search.Search(problem, initialState);
+            //WriteOutSolution(solution);
         }
     }
 }
