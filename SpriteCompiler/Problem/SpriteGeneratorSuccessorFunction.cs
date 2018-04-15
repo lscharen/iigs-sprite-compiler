@@ -6,8 +6,55 @@
     using System.Collections.Generic;
     using System.Linq;
 
+    public sealed class SolidRun
+    {
+        private readonly SpriteByte first;
+        private readonly SpriteByte last;
+
+        public SolidRun(SpriteByte first, SpriteByte last)
+        {
+            this.first = first;
+            this.last = last;
+        }
+
+        public SpriteByte First { get { return first; } }
+        public SpriteByte Last { get { return last; } }
+        public int Count { get { return last.Offset - first.Offset + 1; } }
+    }
+
     public static class StateHelpers
     {
+        public static SolidRun FirstSolidRun(IEnumerable<SpriteByte> open)
+        {
+            bool trigger = false;
+            SpriteByte first = default(SpriteByte);
+            SpriteByte last = default(SpriteByte);
+
+            foreach (var item in open)
+            {
+                if (item.Mask == 0x00 && !trigger)
+                {
+                    first = item;
+                    trigger = true;
+                }
+
+                if ((item.Mask != 0x00 || (item.Offset - last.Offset) > 1) && trigger)
+                {
+                    return new SolidRun(first, last);
+                }
+
+                last = item;
+            }
+
+            // If we get to the end and are still solid, great
+            if (last.Mask == 0x00 && trigger)
+            {
+                return new SolidRun(first, last);
+            }
+
+            return null;
+        }
+
         public static SpriteByte? TryGetStackByte(this SpriteGeneratorState state, IDictionary<ushort, SpriteByte> data)
         {
             SpriteByte top;
@@ -74,6 +121,88 @@
         }
     }
 
+    /// <summary>
+    /// A collection of successor function that deal with very specific situations.  A full successor function can
+    /// be composed of these functions
+    /// </summary>
+    public static class SuccessorFunctions
+    {
+        /// <summary>
+        /// Proposed actions to move the stack. We can only move the stack if we are in 16-bit accumulator
+        /// mode.
+        /// 
+        /// We only consider two movements (add to this list if suboptimal code sequences are found)
+        /// 
+        ///  1. Jump to first byte more than 256 bytes ahead of the current stack location
+        ///  2. Jump to the last byte of the nearest run 
+        /// </summary>
+        public sealed class StackMove : ISuccessorFunction<CodeSequence, SpriteGeneratorState>
+        {
+            public IEnumerable<Tuple<CodeSequence, SpriteGeneratorState>> Successors(SpriteGeneratorState state)
+            {
+                if (!state.LongA || !state.S.IsScreenOffset)
+                {
+                    yield break;
+                }
+
+                var openList = state.RemainingBytes();
+
+                // Check for the first byte more than 255 bytes beyound our current location
+                var nextByte = openList.Where(sb => (sb.Offset - state.S.Value) > 255).Cast<SpriteByte?>().FirstOrDefault();
+                if (nextByte != null)
+                {
+                    yield return state.Apply(new MOVE_STACK(nextByte.Value.Offset - state.S.Value));
+                }
+
+                // Check for the next run of solid bytes and move to the end
+                var run = StateHelpers.FirstSolidRun(openList);
+                if (run != null)
+                {
+                    yield return state.Apply(new MOVE_STACK(run.Last.Offset - state.S.Value));
+                }
+                
+                yield break;
+            }
+        }
+
+        /// <summary>
+        /// Write the next 8-bit value that is not a solid byte.  Must already be in 8-bit mode
+        /// </summary>
+        public sealed class EighBitMixed : ISuccessorFunction<CodeSequence, SpriteGeneratorState>
+        {
+            public IEnumerable<Tuple<CodeSequence, SpriteGeneratorState>> Successors(SpriteGeneratorState state)
+            {
+                if (state.LongA || !state.S.IsScreenOffset)
+                {
+                    yield break;
+                }
+
+                var openList = state.RemainingBytes();
+
+                // Get the first byte with a non-zero mask that is within 255 bytes of the current location
+                var nextByte = openList.Where(sb => (sb.Offset - state.S.Value) <= 255).Cast<SpriteByte?>().FirstOrDefault();
+                if (nextByte != null)
+                {
+                    yield return state.Apply(new MOVE_STACK(nextByte.Value.Offset - state.S.Value));
+                }
+
+                // Check for the next run of solid bytes and move to the end
+                var run = StateHelpers.FirstSolidRun(openList);
+                if (run != null)
+                {
+                    yield return state.Apply(new MOVE_STACK(run.Last.Offset - state.S.Value));
+                }
+
+                yield break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// This successor function does not try to leverage cached values in the X, Y or D registers
+    /// </summary>
+    
+
     public sealed class SpriteGeneratorSuccessorFunction : ISuccessorFunction<CodeSequence, SpriteGeneratorState>
     {
         public IEnumerable<Tuple<CodeSequence, SpriteGeneratorState>> Successors(SpriteGeneratorState state)
@@ -94,7 +223,7 @@
             var firstByte = open.First();
 
             // Identify the first run of solid bytes
-            var firstSolid = FirstSolidRun(open);
+            var firstSolid = StateHelpers.FirstSolidRun(open);
 
             // In an initial state, the stack has not been set, but the accumulator contains a screen
             // offset address.  There are three possible options
@@ -314,53 +443,6 @@
                 (pair.Item1.Offset == (pair.Item2.Offset - 1)) &&
                 pair.Item1.Mask == 0x00 &&
                 pair.Item2.Mask == 0x00;
-        }
-
-        private class SolidRun
-        {
-            private readonly SpriteByte first;
-            private readonly SpriteByte last;
-        
-            public SolidRun(SpriteByte first, SpriteByte last)
-            {
-                this.first = first;
-                this.last = last;
-            }
-
-            public SpriteByte First { get { return first; } }
-            public SpriteByte Last { get { return last; } }
-            public int Count { get { return last.Offset - first.Offset + 1; } }
-        }
-
-        private SolidRun FirstSolidRun(IEnumerable<SpriteByte> open)
-        {
-            bool trigger = false;
-            SpriteByte first = default(SpriteByte);
-            SpriteByte last = default(SpriteByte);
-            
-            foreach (var item in open)
-            {
-                if (item.Mask == 0x00 && !trigger)
-                {
-                    first = item;
-                    trigger = true;
-                }
-
-                if ((item.Mask != 0x00 || (item.Offset - last.Offset) > 1) && trigger)
-                {
-                    return new SolidRun(first, last);
-                }
-
-                last = item;
-            }
-
-            // If we get to the end and are still sold, great
-            if (last.Mask == 0x00 && trigger)
-            {
-                return new SolidRun(first, last);
-            }
-
-            return null;
         }
 
         private Func<SpriteByte, bool> WithinRangeOf(int addr, int range)

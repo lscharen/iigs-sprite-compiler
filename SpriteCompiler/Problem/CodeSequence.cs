@@ -11,13 +11,18 @@ namespace SpriteCompiler.Problem
     /// </summary>
     public abstract class CodeSequence
     {
+        protected CodeSequence()
+            : this(0)
+        {
+        }
+
         protected CodeSequence(int cycles)
         {
             CycleCount = cycles;
         }
 
         // Number of cycles that this code snippets takes to execute
-        public int CycleCount { get; private set; }
+        public int CycleCount { get; protected set; }
 
         // Function to generate a new state based on the code's operation
         public abstract SpriteGeneratorState Apply(SpriteGeneratorState state);
@@ -195,6 +200,40 @@ namespace SpriteCompiler.Problem
         {
             return String.Join("\n",
                 FormatLine("", "LDA", "#$" + value.ToString("X2"), "2 cycles"),
+                FormatLine("", "STA", offset.ToString("X2") + ",s", "4 cycles")
+            );
+        }
+    }
+
+    public sealed class EIGHT_BIT_STORE : CodeSequence
+    {
+        private SpriteByte data;
+
+        public EIGHT_BIT_STORE(SpriteByte data)
+        {
+            this.data = data;
+        }
+
+        public override SpriteGeneratorState Apply(SpriteGeneratorState state)
+        {
+            var offset = data.Offset - state.S.Value;
+
+            // If
+
+
+            return state.Clone(_ =>
+            {
+                _.A = Register.UNINITIALIZED;
+                _.RemoveByte((ushort)(offset + _.S.Value));
+            });
+        }
+
+        public override string Emit()
+        {
+            return String.Join("\n",
+                FormatLine("", "LDA", offset.ToString("X2") + ",s", "4 cycles"),
+                FormatLine("", "AND", "#$" + mask.ToString("X2"), "2 cycles"),
+                FormatLine("", "ORA", "#$" + value.ToString("X2"), "2 cycles"),
                 FormatLine("", "STA", offset.ToString("X2") + ",s", "4 cycles")
             );
         }
